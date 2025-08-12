@@ -34,8 +34,13 @@ export interface AuthSession {
  * Generate OAuth authorization URL
  */
 export function generateAuthUrl(siteId?: string, env?: any): { authUrl: string; state: string } {
+    console.log('generateAuthUrl called with:', { siteId, hasEnv: !!env });
+    
     const clientId = env?.WEBFLOW_CLIENT_ID || process.env.WEBFLOW_CLIENT_ID;
+    console.log('Client ID found:', !!clientId);
+    
     if (!clientId) {
+        console.error('WEBFLOW_CLIENT_ID not found in env or process.env');
         throw new Error('WEBFLOW_CLIENT_ID not configured');
     }
 
