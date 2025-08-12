@@ -8,7 +8,7 @@ import { extractSessionId, validateSession, getWebflowClient, isAuthorizedForSit
 /**
  * GET /api/admin/framework - Get framework status
  */
-export async function GET(request: Request, { locals }: { locals: any }) {
+export async function GET(request: Request, context: any) {
     try {
         // Extract and validate session
         const sessionId = extractSessionId(request);
@@ -94,7 +94,7 @@ export async function GET(request: Request, { locals }: { locals: any }) {
 /**
  * POST /api/admin/framework - Install/update framework
  */
-export async function POST(request: Request, { locals }: { locals: any }) {
+export async function POST(request: Request, context: any) {
     try {
         // Extract and validate session
         const sessionId = extractSessionId(request);
