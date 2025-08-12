@@ -102,19 +102,30 @@
 
         // Check authentication status on page load
         window.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, functions available:', {
+                authenticate: typeof authenticate,
+                checkStatus: typeof checkStatus
+            });
             checkStatus();
             document.getElementById('actions').style.display = 'block';
         });
 
         async function authenticate() {
+            console.log('Authentication function called');
             try {
+                console.log('Fetching /lucid/auth');
                 const response = await fetch('/lucid/auth');
+                console.log('Auth response:', response.status, response.ok);
+                
                 if (response.ok) {
+                    console.log('Redirecting to auth');
                     window.location.href = '/lucid/auth';
                 } else {
+                    console.error('Auth failed with status:', response.status);
                     showError('Failed to start authentication');
                 }
             } catch (error) {
+                console.error('Authentication error:', error);
                 showError('Authentication error: ' + error.message);
             }
         }
