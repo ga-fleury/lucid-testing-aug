@@ -4,7 +4,7 @@ import { handleCallback, createAuthenticatedResponse } from '../../lib/auth-simp
  * Handle OAuth callback from Webflow authorization
  * Simple implementation matching Webflow's official pattern
  */
-export async function GET(request: Request, { locals }: { locals: any }) {
+export async function GET(request: Request, context: any) {
     try {
         const url = new URL(request.url);
         const code = url.searchParams.get('code');
@@ -46,7 +46,7 @@ export async function GET(request: Request, { locals }: { locals: any }) {
         }
 
         // Handle the callback and get session
-        const session = await handleCallback(code, effectiveState, locals?.runtime?.env);
+        const session = await handleCallback(code, effectiveState, context?.locals?.runtime?.env);
 
         console.log(`Session created for user: ${session.userEmail}`);
 
