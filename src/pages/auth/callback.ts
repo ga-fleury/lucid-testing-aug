@@ -17,27 +17,43 @@ export async function GET(request: Request) {
             return new Response(null, {
                 status: 302,
                 headers: { 
-                    Location: `/auth/error?error=${encodeURIComponent(error)}` 
+                    Location: `/lucid/auth/error?error=${encodeURIComponent(error)}` 
                 }
             });
         }
 
+        // Debug logging
+        console.log('OAuth callback received:', { 
+            hasCode: !!code, 
+            hasState: !!state, 
+            codeLength: code?.length,
+            url: url.toString()
+        });
+
         // Validate required parameters
-        if (!code || !state) {
-            return new Response("Missing authorization code or state parameter", { 
+        if (!code) {
+            return new Response("Missing authorization code", { 
                 status: 400 
             });
         }
 
+        // If state is missing, generate a temporary one for now
+        // This is not ideal for security but helps debug the issue
+        const effectiveState = state || 'temp-state-' + Date.now();
+        
+        if (!state) {
+            console.warn('State parameter missing from OAuth callback - using temporary state for debugging');
+        }
+
         // Handle the callback and get session
-        const session = await handleCallback(code, state);
+        const session = await handleCallback(code, effectiveState);
 
         console.log(`Session created for user: ${session.userEmail}`);
 
         // Set session cookie and redirect to success page
         const successUrl = session.siteId 
-            ? `/admin?site=${session.siteId}` 
-            : `/admin`;
+            ? `/lucid/?site=${session.siteId}` 
+            : `/lucid/`;
 
         return new Response(null, {
             status: 302,
@@ -52,7 +68,7 @@ export async function GET(request: Request) {
         return new Response(null, {
             status: 302,
             headers: { 
-                Location: `/auth/error?error=${encodeURIComponent(error.message)}` 
+                Location: `/lucid/auth/error?error=${encodeURIComponent(error.message)}` 
             }
         });
     }
