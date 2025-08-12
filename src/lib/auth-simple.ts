@@ -33,8 +33,8 @@ export interface AuthSession {
 /**
  * Generate OAuth authorization URL
  */
-export function generateAuthUrl(siteId?: string): { authUrl: string; state: string } {
-    const clientId = process.env.WEBFLOW_CLIENT_ID;
+export function generateAuthUrl(siteId?: string, env?: any): { authUrl: string; state: string } {
+    const clientId = env?.WEBFLOW_CLIENT_ID || process.env.WEBFLOW_CLIENT_ID;
     if (!clientId) {
         throw new Error('WEBFLOW_CLIENT_ID not configured');
     }
@@ -61,7 +61,7 @@ export function generateAuthUrl(siteId?: string): { authUrl: string; state: stri
     const authUrl = WebflowClient.authorizeURL({
         scope: scopes,
         clientId: clientId,
-        redirectUri: getRedirectUri(),
+        redirectUri: getRedirectUri(env),
         state: state
     });
 
@@ -71,7 +71,7 @@ export function generateAuthUrl(siteId?: string): { authUrl: string; state: stri
 /**
  * Handle OAuth callback and exchange code for token
  */
-export async function handleCallback(code: string, state: string): Promise<AuthSession> {
+export async function handleCallback(code: string, state: string, env?: any): Promise<AuthSession> {
     // Verify state - temporarily more forgiving for debugging
     const storedState = stateStorage.get(state);
     let siteId = undefined;
@@ -98,10 +98,10 @@ export async function handleCallback(code: string, state: string): Promise<AuthS
 
     // Exchange code for access token
     const accessToken = await WebflowClient.getAccessToken({
-        clientId: process.env.WEBFLOW_CLIENT_ID!,
-        clientSecret: process.env.WEBFLOW_CLIENT_SECRET!,
+        clientId: env?.WEBFLOW_CLIENT_ID || process.env.WEBFLOW_CLIENT_ID!,
+        clientSecret: env?.WEBFLOW_CLIENT_SECRET || process.env.WEBFLOW_CLIENT_SECRET!,
         code: code,
-        redirectUri: getRedirectUri(),
+        redirectUri: getRedirectUri(env),
     });
 
     if (!accessToken) {
@@ -254,14 +254,14 @@ export function createAuthenticatedResponse(
 /**
  * Get redirect URI for OAuth
  */
-function getRedirectUri(): string {
+function getRedirectUri(env?: any): string {
     // In Webflow Cloud, use the current origin with base path
     if (typeof window !== 'undefined') {
         return `${window.location.origin}/lucid/auth/callback`;
     }
     
     // For server-side, construct from environment or use default
-    const baseUrl = process.env.WEBFLOW_SITE_URL || 'https://your-site.webflow.io';
+    const baseUrl = env?.WEBFLOW_SITE_URL || process.env.WEBFLOW_SITE_URL || 'https://your-site.webflow.io';
     return `${baseUrl}/lucid/auth/callback`;
 }
 

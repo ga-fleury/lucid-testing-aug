@@ -2,7 +2,7 @@
  * Simple status API for monitoring
  * GET /api/admin/status - Check system status
  */
-export async function GET(request: Request) {
+export async function GET(request: Request, { locals }: { locals: any }) {
     try {
         const status = {
             system: {
@@ -13,9 +13,9 @@ export async function GET(request: Request) {
                 authenticated: false
             },
             environment: {
-                nodeEnv: process.env.NODE_ENV || 'unknown',
-                hasClientId: !!process.env.WEBFLOW_CLIENT_ID,
-                hasClientSecret: !!process.env.WEBFLOW_CLIENT_SECRET,
+                nodeEnv: locals?.runtime?.env?.NODE_ENV || process.env.NODE_ENV || 'unknown',
+                hasClientId: !!(locals?.runtime?.env?.WEBFLOW_CLIENT_ID || process.env.WEBFLOW_CLIENT_ID),
+                hasClientSecret: !!(locals?.runtime?.env?.WEBFLOW_CLIENT_SECRET || process.env.WEBFLOW_CLIENT_SECRET),
                 deployedOn: 'webflow-cloud'
             },
             timestamp: new Date().toISOString()
