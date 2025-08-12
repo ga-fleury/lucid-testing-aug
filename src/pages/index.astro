@@ -108,9 +108,9 @@
 
         async function authenticate() {
             try {
-                const response = await fetch('/auth');
+                const response = await fetch('/lucid/auth');
                 if (response.ok) {
-                    window.location.href = '/auth';
+                    window.location.href = '/lucid/auth';
                 } else {
                     showError('Failed to start authentication');
                 }
@@ -127,7 +127,7 @@
             statusEl.textContent = 'Checking status...';
             
             try {
-                const response = await fetch('/api/admin/status');
+                const response = await fetch('/lucid/api/admin/status');
                 const data = await response.json();
                 
                 if (response.ok) {
@@ -170,7 +170,7 @@
             }
             
             try {
-                const response = await fetch('/api/admin/framework', {
+                const response = await fetch('/lucid/api/admin/framework', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -210,7 +210,7 @@
             }
             
             try {
-                const response = await fetch('/api/admin/framework', {
+                const response = await fetch('/lucid/api/admin/framework', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
