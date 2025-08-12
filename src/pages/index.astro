@@ -1,0 +1,249 @@
+---
+// Lucid Framework - Admin Interface
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucid Framework - Admin</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .admin-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+        .status {
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        .status.loading {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        .status.error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        .status.success {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        pre {
+            background: #f9fafb;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <h1>🚀 Lucid Framework Admin</h1>
+        
+        <div id="status" class="status loading">
+            Loading framework status...
+        </div>
+
+        <div id="actions" style="display: none;">
+            <button class="btn btn-primary" onclick="authenticate()">
+                🔐 Authenticate with Webflow
+            </button>
+            
+            <button class="btn btn-primary" onclick="checkStatus()" style="background: #10b981;">
+                📊 Check Status
+            </button>
+        </div>
+
+        <div id="results">
+            <!-- Results will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        let isAuthenticated = false;
+
+        // Check authentication status on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            checkStatus();
+            document.getElementById('actions').style.display = 'block';
+        });
+
+        async function authenticate() {
+            try {
+                const response = await fetch('/auth');
+                if (response.ok) {
+                    window.location.href = '/auth';
+                } else {
+                    showError('Failed to start authentication');
+                }
+            } catch (error) {
+                showError('Authentication error: ' + error.message);
+            }
+        }
+
+        async function checkStatus() {
+            const statusEl = document.getElementById('status');
+            const resultsEl = document.getElementById('results');
+            
+            statusEl.className = 'status loading';
+            statusEl.textContent = 'Checking status...';
+            
+            try {
+                const response = await fetch('/api/admin/status');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusEl.className = 'status success';
+                    statusEl.textContent = `System: ${data.system.status} | Authenticated: ${data.session.authenticated}`;
+                    
+                    resultsEl.innerHTML = '<h3>System Status</h3><pre>' + 
+                        JSON.stringify(data, null, 2) + '</pre>';
+                    
+                    if (data.session.authenticated) {
+                        isAuthenticated = true;
+                        showFrameworkActions();
+                    }
+                } else {
+                    throw new Error(data.error || 'Status check failed');
+                }
+            } catch (error) {
+                showError('Status check failed: ' + error.message);
+            }
+        }
+
+        function showFrameworkActions() {
+            const actionsEl = document.getElementById('actions');
+            actionsEl.innerHTML += `
+                <hr style="margin: 1rem 0;">
+                <h3>Framework Actions</h3>
+                <button class="btn btn-primary" onclick="installFramework()" style="background: #10b981;">
+                    ⚡ Install Framework
+                </button>
+                <button class="btn btn-primary" onclick="uninstallFramework()" style="background: #ef4444;">
+                    🗑️ Uninstall Framework
+                </button>
+            `;
+        }
+
+        async function installFramework() {
+            if (!isAuthenticated) {
+                showError('Please authenticate first');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/admin/framework', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'install',
+                        config: {
+                            debug: true,
+                            theme: 'default'
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showSuccess('Framework installed successfully!');
+                    document.getElementById('results').innerHTML += 
+                        '<h3>Installation Result</h3><pre>' + 
+                        JSON.stringify(data, null, 2) + '</pre>';
+                } else {
+                    throw new Error(data.error || 'Installation failed');
+                }
+            } catch (error) {
+                showError('Installation error: ' + error.message);
+            }
+        }
+
+        async function uninstallFramework() {
+            if (!isAuthenticated) {
+                showError('Please authenticate first');
+                return;
+            }
+            
+            if (!confirm('Are you sure you want to uninstall the framework?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/admin/framework', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action: 'uninstall' })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showSuccess('Framework uninstalled successfully!');
+                    document.getElementById('results').innerHTML += 
+                        '<h3>Uninstallation Result</h3><pre>' + 
+                        JSON.stringify(data, null, 2) + '</pre>';
+                } else {
+                    throw new Error(data.error || 'Uninstallation failed');
+                }
+            } catch (error) {
+                showError('Uninstallation error: ' + error.message);
+            }
+        }
+
+        function showError(message) {
+            const statusEl = document.getElementById('status');
+            statusEl.className = 'status error';
+            statusEl.textContent = '❌ ' + message;
+        }
+
+        function showSuccess(message) {
+            const statusEl = document.getElementById('status');
+            statusEl.className = 'status success';
+            statusEl.textContent = '✅ ' + message;
+        }
+    </script>
+</body>
+</html>

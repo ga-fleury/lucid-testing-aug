@@ -1,0 +1,31 @@
+{
+  "name": "lucid-webflow",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^12.6.3",
+    "@astrojs/react": "^4.3.0",
+    "@astrojs/svelte": "^7.1.0",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "astro": "^5.12.9",
+    "dotenv": "^17.2.1",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "svelte": "^5.38.1",
+    "webflow-api": "^3.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
+}
