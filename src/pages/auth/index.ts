@@ -4,13 +4,13 @@ import { generateAuthUrl } from '../../lib/auth-simple.js';
  * Simple Webflow OAuth initiation - matches Webflow's official pattern
  * GET /auth - Start OAuth flow
  */
-export async function GET(request: Request, { locals }: { locals: any }) {
+export async function GET(request: Request, context: any) {
     try {
         const url = new URL(request.url);
         const siteId = url.searchParams.get('site_id');
 
         // Generate authorization URL
-        const { authUrl, state } = generateAuthUrl(siteId, locals?.runtime?.env);
+        const { authUrl, state } = generateAuthUrl(siteId, context?.locals?.runtime?.env);
 
         // Check if this is an AJAX request
         const isAjax = request.headers.get('X-Requested-With') === 'XMLHttpRequest';
