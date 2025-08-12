@@ -110,7 +110,7 @@
             document.getElementById('actions').style.display = 'block';
         });
 
-        async function authenticate() {
+        window.authenticate = async function() {
             console.log('Authentication function called');
             try {
                 console.log('Fetching /lucid/auth');
@@ -130,7 +130,7 @@
             }
         }
 
-        async function checkStatus() {
+        window.checkStatus = async function() {
             const statusEl = document.getElementById('status');
             const resultsEl = document.getElementById('results');
             
@@ -160,7 +160,7 @@
             }
         }
 
-        function showFrameworkActions() {
+        window.showFrameworkActions = function() {
             const actionsEl = document.getElementById('actions');
             actionsEl.innerHTML += `
                 <hr style="margin: 1rem 0;">
@@ -174,7 +174,7 @@
             `;
         }
 
-        async function installFramework() {
+        window.installFramework = async function() {
             if (!isAuthenticated) {
                 showError('Please authenticate first');
                 return;
@@ -210,7 +210,7 @@
             }
         }
 
-        async function uninstallFramework() {
+        window.uninstallFramework = async function() {
             if (!isAuthenticated) {
                 showError('Please authenticate first');
                 return;
@@ -244,13 +244,13 @@
             }
         }
 
-        function showError(message) {
+        window.showError = function(message) {
             const statusEl = document.getElementById('status');
             statusEl.className = 'status error';
             statusEl.textContent = '❌ ' + message;
         }
 
-        function showSuccess(message) {
+        window.showSuccess = function(message) {
             const statusEl = document.getElementById('status');
             statusEl.className = 'status success';
             statusEl.textContent = '✅ ' + message;
