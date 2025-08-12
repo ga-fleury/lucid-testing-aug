@@ -2,8 +2,11 @@
  * Simple status API for monitoring
  * GET /api/admin/status - Check system status
  */
-export async function GET(request: Request) {
+export async function GET(request: Request, { locals }: { locals: any }) {
     try {
+        // Get environment variables from Webflow Cloud runtime
+        const env = locals?.runtime?.env;
+        
         const status = {
             system: {
                 status: 'healthy',
@@ -13,10 +16,11 @@ export async function GET(request: Request) {
                 authenticated: false
             },
             environment: {
-                nodeEnv: 'production',
-                hasClientId: true,
-                hasClientSecret: true,
-                deployedOn: 'webflow-cloud'
+                nodeEnv: env?.NODE_ENV || 'production',
+                hasClientId: !!(env?.WEBFLOW_CLIENT_ID),
+                hasClientSecret: !!(env?.WEBFLOW_CLIENT_SECRET),
+                deployedOn: 'webflow-cloud',
+                hasRuntimeEnv: !!env
             },
             timestamp: new Date().toISOString()
         };
