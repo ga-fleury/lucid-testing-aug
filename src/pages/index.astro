@@ -110,24 +110,10 @@
             document.getElementById('actions').style.display = 'block';
         });
 
-        window.authenticate = async function() {
-            console.log('Authentication function called');
-            try {
-                console.log('Fetching /lucid/auth');
-                const response = await fetch('/lucid/auth');
-                console.log('Auth response:', response.status, response.ok);
-                
-                if (response.ok) {
-                    console.log('Redirecting to auth');
-                    window.location.href = '/lucid/auth';
-                } else {
-                    console.error('Auth failed with status:', response.status);
-                    showError('Failed to start authentication');
-                }
-            } catch (error) {
-                console.error('Authentication error:', error);
-                showError('Authentication error: ' + error.message);
-            }
+        window.authenticate = function() {
+            console.log('Authentication function called - redirecting to auth endpoint');
+            // Direct redirect to OAuth endpoint (no fetch needed)
+            window.location.href = '/lucid/auth';
         }
 
         window.checkStatus = async function() {
