@@ -166,6 +166,20 @@
                     console.error('Locals endpoint failed');
                 }
                 
+                // Test the context parameter endpoint
+                console.log('Testing context parameter endpoint...');
+                const contextResponse = await fetch('/lucid/api/test-context');
+                console.log('Context response status:', contextResponse.status);
+                console.log('Context response ok:', contextResponse.ok);
+                
+                let contextData = null;
+                if (contextResponse.ok) {
+                    contextData = await contextResponse.json();
+                    console.log('Context endpoint data:', contextData);
+                } else {
+                    console.error('Context endpoint failed');
+                }
+                
                 // Now try the simple status endpoint
                 console.log('Testing simple status endpoint...');
                 const response = await fetch('/lucid/api/admin/status-simple');
@@ -187,8 +201,10 @@
                         JSON.stringify(data, null, 2) + '</pre>' +
                         '<h3>Test Endpoint</h3><pre>' + 
                         JSON.stringify(testData, null, 2) + '</pre>' +
-                        '<h3>Locals Test</h3><pre>' + 
-                        JSON.stringify(localsData, null, 2) + '</pre>';
+                        '<h3>Locals Test (should fail)</h3><pre>' + 
+                        JSON.stringify(localsData, null, 2) + '</pre>' +
+                        '<h3>Context Test</h3><pre>' + 
+                        JSON.stringify(contextData, null, 2) + '</pre>';
                 } else {
                     throw new Error(data.error || 'Status check failed');
                 }
