@@ -5,8 +5,8 @@
   "environment": {
     "variables": {
       "NODE_ENV": "production",
-      "WEBFLOW_CLIENT_ID": "${WEBFLOW_CLIENT_ID}",
-      "WEBFLOW_CLIENT_SECRET": "${WEBFLOW_CLIENT_SECRET}"
+      "WEBFLOW_CLIENT_ID": "WEBFLOW_CLIENT_ID",
+      "WEBFLOW_CLIENT_SECRET": "WEBFLOW_CLIENT_SECRET"
     }
   }
 }

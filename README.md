@@ -518,7 +518,44 @@ const clientSecret = import.meta.env.WEBFLOW_CLIENT_SECRET;
 - Global scope injection
 - Alternative runtime patterns
 
-**Next Test**: `/lucid/api/test-runtime-global` - Tests runtime global access patterns without relying on context parameter.
+**Runtime Global Test Results**: `/lucid/api/test-runtime-global`
+```json
+{
+  "globalTests": {
+    "processEnv": {
+      "keys": [],                    // ❌ Empty at runtime too
+      "hasClientId": false,
+      "hasClientSecret": false
+    },
+    "directGlobals": {
+      "hasClientId": false,          // ❌ No global injection
+      "hasClientSecret": false
+    },
+    "moduleScope": {
+      "clientIdDefined": false,      // ❌ No direct variable access
+      "clientSecretDefined": false
+    }
+  },
+  "canAuthenticate": false           // ❌ No working access method
+}
+```
+
+## ⚠️ **CRITICAL LIMITATION IDENTIFIED**
+
+**Webflow Cloud Astro Implementation**: Environment variables are **not accessible through any tested method** despite documentation claiming runtime availability.
+
+### Tested and Failed:
+- ❌ Build-time: `import.meta.env` (variables detected, values `undefined`)
+- ❌ Runtime: `process.env` (empty array)
+- ❌ Runtime: Context parameters (not provided)
+- ❌ Runtime: Global scope (not injected)
+- ❌ Runtime: Direct variables (not available)
+
+### Possible Solutions:
+1. **Contact Webflow Support** - This appears to be a platform limitation
+2. **Alternative Authentication** - Use client-side OAuth that doesn't require server-side secrets
+3. **External Configuration** - Store credentials in external service accessible at runtime
+4. **Framework Change** - Consider different framework if Webflow Cloud supports environment variables better in other frameworks
 
 ### Common Issues
 
