@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { extractSessionId, validateSession, healthCheck } from '../../../lib/auth-kv.js';
+import { extractSessionId, validateSession, healthCheck } from '../../../lib/auth-simple.js';
 
 /**
  * Simple status API for monitoring
@@ -13,32 +13,28 @@ export const config = {
 
 export const GET: APIRoute = async ({ request, locals }) => {
     try {
-        console.log('Status endpoint called with correct Webflow Cloud signature');
+        console.log('Status endpoint called');
         
-        // Access Cloudflare runtime environment for KV - Webflow Cloud pattern
+        // Access environment variables through locals.runtime.env
         const env = locals?.runtime?.env;
-        console.log('KV environment available:', !!env);
+        console.log('Environment available:', !!env);
         
         // Check authentication status
         const sessionId = extractSessionId(request);
         let authSession = null;
         if (sessionId) {
-            authSession = await validateSession(sessionId, env);
+            authSession = validateSession(sessionId);
         }
         
-        // For Webflow Cloud, environment variables are available via import.meta.env at build time
-        const hasClientId = !!(import.meta.env.WEBFLOW_CLIENT_ID && 
-                               import.meta.env.WEBFLOW_CLIENT_ID !== '${WEBFLOW_CLIENT_ID}' &&
-                               import.meta.env.WEBFLOW_CLIENT_ID !== '');
-        const hasClientSecret = !!(import.meta.env.WEBFLOW_CLIENT_SECRET && 
-                                   import.meta.env.WEBFLOW_CLIENT_SECRET !== '${WEBFLOW_CLIENT_SECRET}' &&
-                                   import.meta.env.WEBFLOW_CLIENT_SECRET !== '');
+        // Check environment variables
+        const hasClientId = !!(env?.WEBFLOW_CLIENT_ID);
+        const hasClientSecret = !!(env?.WEBFLOW_CLIENT_SECRET);
         
         console.log('Environment check:', { hasClientId, hasClientSecret });
         console.log('Authentication check:', { hasSession: !!authSession });
         
         // Get storage health info
-        const storageHealth = await healthCheck(env);
+        const storageHealth = healthCheck();
         
         const status = {
             system: {
@@ -52,12 +48,11 @@ export const GET: APIRoute = async ({ request, locals }) => {
             },
             storage: storageHealth,
             environment: {
-                nodeEnv: import.meta.env.MODE || 'production',
+                nodeEnv: env?.NODE_ENV || 'production',
                 hasClientId: hasClientId,
                 hasClientSecret: hasClientSecret,
                 deployedOn: 'webflow-cloud',
-                hasImportMetaEnv: !!import.meta.env,
-                envKeys: Object.keys(import.meta.env)
+                hasRuntimeEnv: !!env
             },
             timestamp: new Date().toISOString()
         };

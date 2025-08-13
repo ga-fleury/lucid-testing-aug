@@ -2,6 +2,12 @@
  * Authentication error handler
  * Displays user-friendly error messages for authentication failures
  */
+
+// Required for Webflow Cloud edge runtime
+export const config = {
+    runtime: "edge",
+};
+
 export async function GET(request: Request) {
     try {
         const url = new URL(request.url);

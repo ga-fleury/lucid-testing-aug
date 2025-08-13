@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { generateAuthUrl } from '../../lib/auth-kv.js';
+import { generateAuthUrl } from '../../lib/auth-simple.js';
 
 /**
  * Simple Webflow OAuth initiation - matches Webflow's official pattern
@@ -13,20 +13,17 @@ export const config = {
 
 export const GET: APIRoute = async ({ request, locals }) => {
     try {
-        console.log('Auth endpoint called with correct Webflow Cloud signature');
+        console.log('Auth endpoint called');
         
-        // Access Cloudflare runtime environment for KV - Webflow Cloud pattern
+        // Access environment variables through locals.runtime.env
         const env = locals?.runtime?.env;
-        console.log('KV environment available:', !!env);
+        console.log('Environment available:', !!env);
         
-        // Simple debug first
-        if (!request || !request.url) {
+        if (!env) {
             return new Response(JSON.stringify({
-                error: 'Invalid request object',
-                requestExists: !!request,
-                urlExists: !!(request?.url)
+                error: 'Runtime environment not available'
             }), {
-                status: 400,
+                status: 500,
                 headers: { "Content-Type": "application/json" }
             });
         }
@@ -38,13 +35,11 @@ export const GET: APIRoute = async ({ request, locals }) => {
             siteId = url.searchParams.get('site_id');
         } catch (urlError) {
             console.warn('URL parsing failed:', urlError);
-            // Continue without site ID
         }
         
         console.log('Generating auth URL for siteId:', siteId);
-        console.log('WEBFLOW_CLIENT_ID available:', !!import.meta.env.WEBFLOW_CLIENT_ID);
 
-        // Generate authorization URL with KV support
+        // Generate authorization URL
         const { authUrl, state } = generateAuthUrl(siteId, env);
         
         console.log('Generated auth URL successfully with state:', state.substring(0, 8) + '...');

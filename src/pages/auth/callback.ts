@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { handleCallback, createAuthenticatedResponse } from '../../lib/auth-kv.js';
+import { handleCallback, createAuthenticatedResponse } from '../../lib/auth-simple.js';
 
 /**
  * Handle OAuth callback from Webflow authorization
@@ -13,11 +13,20 @@ export const config = {
 
 export const GET: APIRoute = async ({ request, locals }) => {
     try {
-        console.log('OAuth callback with correct Webflow Cloud signature');
+        console.log('OAuth callback received');
         
-        // Access Cloudflare runtime environment for KV - Webflow Cloud pattern
+        // Access environment variables through locals.runtime.env
         const env = locals?.runtime?.env;
-        console.log('KV environment available:', !!env);
+        console.log('Environment available:', !!env);
+        
+        if (!env) {
+            return new Response(null, {
+                status: 302,
+                headers: { 
+                    Location: `/lucid/auth/error?error=${encodeURIComponent('Runtime environment not available')}` 
+                }
+            });
+        }
         
         const url = new URL(request.url);
         const code = url.searchParams.get('code');
@@ -58,11 +67,11 @@ export const GET: APIRoute = async ({ request, locals }) => {
             console.warn('State parameter missing from OAuth callback - using temporary state for debugging');
         }
 
-        // Handle the callback and get session with KV support
-        console.log('Processing callback with KV storage...');
+        // Handle the callback and get session
+        console.log('Processing callback...');
         const session = await handleCallback(code, effectiveState, env);
 
-        console.log(`Session created for user: ${session.userEmail} (stored in KV)`);
+        console.log(`Session created for user: ${session.userEmail}`);
 
         // Set session cookie and redirect to success page
         const successUrl = session.siteId 
