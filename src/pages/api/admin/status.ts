@@ -1,3 +1,5 @@
+import type { APIRoute } from 'astro';
+
 /**
  * Simple status API for monitoring
  * GET /api/admin/status - Check system status
@@ -14,8 +16,8 @@ export async function GET(request: Request) {
         
         // For Webflow Cloud, environment variables should be available via process.env
         // or injected as globals during build time
-        const hasClientId = typeof process !== 'undefined' && !!process.env?.WEBFLOW_CLIENT_ID;
-        const hasClientSecret = typeof process !== 'undefined' && !!process.env?.WEBFLOW_CLIENT_SECRET;
+        const hasClientId = typeof process !== 'undefined' && !!process.env.WEBFLOW_CLIENT_ID;
+        const hasClientSecret = typeof process !== 'undefined' && !!process.env.WEBFLOW_CLIENT_SECRET;
         
         console.log('Environment check:', { hasClientId, hasClientSecret });
         

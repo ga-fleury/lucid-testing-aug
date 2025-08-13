@@ -254,7 +254,35 @@ npm run preview
 
 ## 🚨 Troubleshooting
 
+### Critical: Webflow Cloud API Route Compatibility
+
+**IMPORTANT**: Webflow Cloud's Astro implementation does NOT support the standard `{ locals }` destructuring pattern in API routes.
+
+❌ **This DOES NOT work in Webflow Cloud:**
+```typescript
+export async function GET(request: Request, { locals }: { locals: any }) {
+    const env = locals.runtime.env;  // This fails!
+}
+```
+
+✅ **This WORKS in Webflow Cloud:**
+```typescript
+export async function GET(request: Request) {
+    const env = process.env;  // Use process.env instead
+}
+```
+
+**Environment Variable Access:**
+- Use `process.env.VARIABLE_NAME` instead of `locals.runtime.env.VARIABLE_NAME`
+- Always check `typeof process !== 'undefined'` for safety
+- The `{ locals }` pattern causes 500 errors in Webflow Cloud
+
 ### Common Issues
+
+**500 Errors on API Routes**
+- Check if using `{ locals }` parameter - remove it
+- Use `process.env` for environment variables
+- Add `export const config = { runtime: "edge" };` to all API routes
 
 **Authentication Failed**
 - Verify `WEBFLOW_CLIENT_ID` and `WEBFLOW_CLIENT_SECRET`
