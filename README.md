@@ -371,8 +371,59 @@ const clientSecret = import.meta.env.WEBFLOW_CLIENT_SECRET;
 **Implementation Updates**:
 - ✅ Updated `src/pages/api/admin/status.ts` to use `import.meta.env`
 - ✅ Updated `src/lib/auth-simple.ts` with `import.meta.env` fallback
-- ⏳ Test authentication flow: Check `/lucid` status endpoint
-- ⏳ Verify values with `/lucid/api/test-env-values`
+- ✅ Verified environment variable access pattern works
+
+**Final Diagnostic Results**:
+
+✅ **Environment Variable Detection**: `/lucid/api/test-env-values`
+```json
+{
+  "environmentVariables": {
+    "webflowClientId": {
+      "type": "undefined",           // ❌ Value is undefined
+      "truthyCheck": false,
+      "isPlaceholder": false
+    },
+    "baseUrl": {
+      "value": "/lucid",             // ✅ Working variable for comparison
+      "type": "string"
+    }
+  }
+}
+```
+
+**Root Cause Identified**:
+- ✅ `import.meta.env` access pattern works correctly
+- ✅ Variables appear in `envKeys`: `["WEBFLOW_CLIENT_ID", "WEBFLOW_CLIENT_SECRET"]`
+- ❌ **Actual values are `undefined`** - not set in Webflow Cloud project settings
+
+🔍 **NEW DISCOVERY - Secret Variables Behave Differently**:
+
+**After setting environment variables in Webflow Cloud**:
+```json
+{
+  "environment": {
+    "envKeys": [
+      "ASSETS_PREFIX", "BASE_URL", "DEV", "MODE", "PROD", "SITE", "SSR",
+      "WEBFLOW_CLIENT_ID"          // ✅ Visible (regular variable)
+      // ❌ WEBFLOW_CLIENT_SECRET missing (marked as "secret variable")
+    ]
+  }
+}
+```
+
+**Key Finding**: When `WEBFLOW_CLIENT_SECRET` is marked as a "secret variable" in Webflow Cloud:
+- ❌ It **disappears** from the `envKeys` array
+- ❌ It's **not accessible** via `import.meta.env`
+- ✅ `WEBFLOW_CLIENT_ID` remains visible (not marked as secret)
+
+**Hypothesis**: Secret variables in Webflow Cloud might require a different access pattern than regular environment variables.
+
+**Investigation Required**:
+1. ⏳ Test `/lucid/api/test-secrets` - Check all possible access patterns
+2. Check if secret variables are available via `env` parameter in API routes
+3. Consider if secret variables need different configuration in `webflow.json`
+4. Research Webflow Cloud documentation for secret variable access patterns
 
 ### Common Issues
 
