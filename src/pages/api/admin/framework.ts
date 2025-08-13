@@ -5,6 +5,11 @@ import { extractSessionId, validateSession, getWebflowClient, isAuthorizedForSit
  * Uses only WEBFLOW_CLIENT_ID and WEBFLOW_CLIENT_SECRET
  */
 
+// Required for Webflow Cloud edge runtime
+export const config = {
+    runtime: "edge",
+};
+
 /**
  * GET /api/admin/framework - Get framework status
  */
