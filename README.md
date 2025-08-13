@@ -315,10 +315,35 @@ Based on Webflow Cloud and Cloudflare Workers documentation:
 
 3. **Issue**: The `{ locals }` destructuring pattern fails in Webflow Cloud, but the `env` parameter pattern might work.
 
+**Test Results:**
+
+✅ **Cloudflare Workers `env` Parameter Test**: `/lucid/api/test-workers-env`
+```json
+{
+  "parameters": {
+    "hasEnv": false,
+    "hasCtx": false,
+    "envType": "undefined",
+    "ctxType": "undefined"
+  }
+}
+```
+❌ **Result**: Cloudflare Workers pattern also DOES NOT work in Webflow Cloud
+
+**Final Hypothesis - Build-Time Variables:**
+Based on Astro documentation, environment variables might be injected at build time via `import.meta.env`:
+
+```typescript
+// Astro standard pattern
+const clientId = import.meta.env.WEBFLOW_CLIENT_ID;
+// OR with PUBLIC_ prefix for client-side access
+const clientId = import.meta.env.PUBLIC_WEBFLOW_CLIENT_ID;
+```
+
 **Next Steps:**
-1. Test Cloudflare Workers `env` parameter pattern: `/lucid/api/test-workers-env`
-2. If successful, update all API routes to use `env` parameter instead of `locals`
-3. Verify environment variables are properly set in Webflow Cloud project settings
+1. ⏳ Test `import.meta.env` pattern: `/lucid/api/test-import-meta`
+2. If successful, update all API routes to use `import.meta.env`
+3. Consider adding `PUBLIC_` prefix to environment variables if needed
 
 ### Common Issues
 
