@@ -277,6 +277,27 @@ export async function GET(request: Request) {
 - Always check `typeof process !== 'undefined'` for safety
 - The `{ locals }` pattern causes 500 errors in Webflow Cloud
 
+**CRITICAL: Environment Variables Not Accessible in Runtime**
+- ⚠️ **Issue**: Environment variables are NOT accessible via `process.env` in Webflow Cloud runtime
+- 🔍 **Testing shows**: `process.env` exists but is empty (no keys available)
+- 📝 **webflow.json**: Variables are correctly configured with `${VARIABLE_NAME}` pattern
+- 🚨 **Impact**: Authentication cannot work without access to `WEBFLOW_CLIENT_ID` and `WEBFLOW_CLIENT_SECRET`
+
+**Debugging Results:**
+```javascript
+// All of these return undefined/empty in Webflow Cloud:
+process.env.WEBFLOW_CLIENT_ID          // undefined
+globalThis.WEBFLOW_CLIENT_ID           // undefined  
+WEBFLOW_CLIENT_ID                      // undefined
+Object.keys(process.env)               // [] (empty array)
+```
+
+**Possible Solutions to Investigate:**
+1. Check Webflow Cloud project settings for environment variable configuration
+2. Verify deployment includes environment variables
+3. Check if variables use different names in Webflow Cloud
+4. Investigate if build-time injection is required instead of runtime access
+
 ### Common Issues
 
 **500 Errors on API Routes**
