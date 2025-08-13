@@ -496,16 +496,29 @@ const clientSecret = import.meta.env.WEBFLOW_CLIENT_SECRET;
 3. 🔧 **Update API routes**: Switch from `import.meta.env` to runtime access
 4. 🎯 **Enable authentication**: OAuth should work with runtime variables
 
-**Expected Solution Pattern**:
-```typescript
-// ❌ OLD: Build-time access (doesn't work)
-const clientId = import.meta.env.WEBFLOW_CLIENT_ID;
-
-// ✅ NEW: Runtime access (should work)
-export async function GET(request: Request, context: any) {
-    const clientId = context.locals.runtime.env.WEBFLOW_CLIENT_ID;
+**Runtime Test Results**: `/lucid/api/test-runtime`
+```json
+{
+  "parameterTests": {
+    "hasContext": false,          // ❌ No context parameter in Webflow Cloud
+    "contextType": "undefined"
+  },
+  "runtimeAccess": {
+    "method1": { "hasClientId": false },    // ❌ context.locals.runtime.env
+    "method2": { "hasClientId": false },    // ❌ context.env  
+    "method3": { "hasClientId": false }     // ❌ direct context
+  }
 }
 ```
+
+**Key Discovery**: Webflow Cloud's Astro implementation **doesn't provide the standard `context` parameter** to API routes.
+
+**New Hypothesis**: Environment variables might be available via:
+- Runtime `process.env` (different from build-time)
+- Global scope injection
+- Alternative runtime patterns
+
+**Next Test**: `/lucid/api/test-runtime-global` - Tests runtime global access patterns without relying on context parameter.
 
 ### Common Issues
 
