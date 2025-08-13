@@ -9,7 +9,11 @@ import svelte from '@astrojs/svelte';
 
 // https://astro.build/config
 export default defineConfig({
-  adapter: cloudflare(),
+  adapter: cloudflare({
+    // Explicitly enable KV bindings
+    mode: 'advanced',
+    functionPerRoute: false
+  }),
   integrations: [react(), svelte()],
   base: '/lucid',
   trailingSlash: 'ignore',

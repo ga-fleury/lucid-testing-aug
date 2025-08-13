@@ -320,11 +320,18 @@ export function extractSessionId(request: Request): string | null {
         return authHeader.substring(7);
     }
 
-    // Check query parameter
-    const url = new URL(request.url);
-    const sessionParam = url.searchParams.get('session');
-    if (sessionParam) {
-        return sessionParam;
+    // Check query parameter - safely handle URL parsing
+    try {
+        if (request.url) {
+            const url = new URL(request.url);
+            const sessionParam = url.searchParams.get('session');
+            if (sessionParam) {
+                return sessionParam;
+            }
+        }
+    } catch (urlError) {
+        console.warn('Failed to parse request URL for session parameter:', urlError);
+        // Continue to cookie check
     }
 
     // Check cookie
