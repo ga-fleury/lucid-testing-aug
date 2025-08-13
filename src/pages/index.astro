@@ -152,6 +152,20 @@
                 const testData = await testResponse.json();
                 console.log('Test endpoint data:', testData);
                 
+                // Test the locals parameter endpoint
+                console.log('Testing locals parameter endpoint...');
+                const localsResponse = await fetch('/lucid/api/test-locals');
+                console.log('Locals response status:', localsResponse.status);
+                console.log('Locals response ok:', localsResponse.ok);
+                
+                let localsData = null;
+                if (localsResponse.ok) {
+                    localsData = await localsResponse.json();
+                    console.log('Locals endpoint data:', localsData);
+                } else {
+                    console.error('Locals endpoint failed');
+                }
+                
                 // Now try the simple status endpoint
                 console.log('Testing simple status endpoint...');
                 const response = await fetch('/lucid/api/admin/status-simple');
@@ -172,7 +186,9 @@
                     resultsEl.innerHTML = '<h3>System Status (Simple)</h3><pre>' + 
                         JSON.stringify(data, null, 2) + '</pre>' +
                         '<h3>Test Endpoint</h3><pre>' + 
-                        JSON.stringify(testData, null, 2) + '</pre>';
+                        JSON.stringify(testData, null, 2) + '</pre>' +
+                        '<h3>Locals Test</h3><pre>' + 
+                        JSON.stringify(localsData, null, 2) + '</pre>';
                 } else {
                     throw new Error(data.error || 'Status check failed');
                 }
