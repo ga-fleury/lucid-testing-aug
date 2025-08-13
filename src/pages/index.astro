@@ -180,9 +180,9 @@
                     console.error('Context endpoint failed');
                 }
                 
-                // Now try the simple status endpoint
-                console.log('Testing simple status endpoint...');
-                const response = await fetch('/lucid/api/admin/status-simple');
+                // Now try the ORIGINAL status endpoint (should work now)
+                console.log('Testing ORIGINAL status endpoint...');
+                const response = await fetch('/lucid/api/admin/status');
                 console.log('Status response status:', response.status);
                 console.log('Status response ok:', response.ok);
                 
@@ -195,16 +195,15 @@
                 
                 if (response.ok) {
                     statusEl.className = 'status success';
-                    statusEl.textContent = `System: ${data.system.status} | Test endpoints working`;
+                    statusEl.textContent = `System: ${data.system.status} | Authenticated: ${data.session.authenticated}`;
                     
-                    resultsEl.innerHTML = '<h3>System Status (Simple)</h3><pre>' + 
-                        JSON.stringify(data, null, 2) + '</pre>' +
-                        '<h3>Test Endpoint</h3><pre>' + 
-                        JSON.stringify(testData, null, 2) + '</pre>' +
-                        '<h3>Locals Test (should fail)</h3><pre>' + 
-                        JSON.stringify(localsData, null, 2) + '</pre>' +
-                        '<h3>Context Test</h3><pre>' + 
-                        JSON.stringify(contextData, null, 2) + '</pre>';
+                    resultsEl.innerHTML = '<h3>System Status (FIXED!)</h3><pre>' + 
+                        JSON.stringify(data, null, 2) + '</pre>';
+                        
+                    if (data.session.authenticated) {
+                        isAuthenticated = true;
+                        showFrameworkActions();
+                    }
                 } else {
                     throw new Error(data.error || 'Status check failed');
                 }

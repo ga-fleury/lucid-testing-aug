@@ -9,29 +9,24 @@ import { generateAuthUrl } from '../../lib/auth-simple.js';
 export const config = {
     runtime: "edge",
 };
-export async function GET(request: Request, { locals }: { locals: any }) {
+export async function GET(request: Request) {
     try {
         console.log('Auth endpoint called');
-        console.log('Locals available:', !!locals);
-        console.log('Runtime available:', !!locals?.runtime);
         
         const url = new URL(request.url);
         const siteId = url.searchParams.get('site_id');
         
         console.log('Generating auth URL for siteId:', siteId);
 
-        // Get environment variables from Webflow Cloud runtime
-        const env = locals?.runtime?.env;
+        // For Webflow Cloud, try process.env or null to trigger fallback
+        const env = (typeof process !== 'undefined' && process.env) ? process.env : null;
         console.log('Environment available:', !!env);
         
-        if (!env) {
-            console.error('Runtime environment not available');
-            throw new Error('Runtime environment not available');
+        if (env) {
+            console.log('Environment WEBFLOW_CLIENT_ID available:', !!env.WEBFLOW_CLIENT_ID);
         }
-        
-        console.log('Environment WEBFLOW_CLIENT_ID available:', !!env.WEBFLOW_CLIENT_ID);
 
-        // Generate authorization URL
+        // Generate authorization URL (will use fallback if env is null)
         console.log('About to call generateAuthUrl');
         const { authUrl, state } = generateAuthUrl(siteId, env);
         console.log('generateAuthUrl completed successfully');

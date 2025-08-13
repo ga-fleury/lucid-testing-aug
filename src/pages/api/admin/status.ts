@@ -8,19 +8,16 @@ export const config = {
     runtime: "edge",
 };
 
-export async function GET(request: Request, { locals }: { locals: any }) {
+export async function GET(request: Request) {
     try {
         console.log('Status endpoint called');
-        console.log('Locals available:', !!locals);
-        console.log('Runtime available:', !!locals?.runtime);
         
-        // Get environment variables from Webflow Cloud runtime
-        const env = locals?.runtime?.env;
-        console.log('Environment available:', !!env);
+        // For Webflow Cloud, environment variables should be available via process.env
+        // or injected as globals during build time
+        const hasClientId = typeof process !== 'undefined' && !!process.env?.WEBFLOW_CLIENT_ID;
+        const hasClientSecret = typeof process !== 'undefined' && !!process.env?.WEBFLOW_CLIENT_SECRET;
         
-        if (env) {
-            console.log('Environment keys:', Object.keys(env));
-        }
+        console.log('Environment check:', { hasClientId, hasClientSecret });
         
         const status = {
             system: {
@@ -31,13 +28,11 @@ export async function GET(request: Request, { locals }: { locals: any }) {
                 authenticated: false
             },
             environment: {
-                nodeEnv: env?.NODE_ENV || 'production',
-                hasClientId: !!(env?.WEBFLOW_CLIENT_ID),
-                hasClientSecret: !!(env?.WEBFLOW_CLIENT_SECRET),
+                nodeEnv: (typeof process !== 'undefined' && process.env?.NODE_ENV) || 'production',
+                hasClientId: hasClientId,
+                hasClientSecret: hasClientSecret,
                 deployedOn: 'webflow-cloud',
-                hasRuntimeEnv: !!env,
-                hasLocals: !!locals,
-                hasRuntime: !!locals?.runtime
+                hasProcessEnv: typeof process !== 'undefined' && !!process.env
             },
             timestamp: new Date().toISOString()
         };

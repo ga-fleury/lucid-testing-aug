@@ -48,18 +48,17 @@ export interface AuthSession {
 /**
  * Generate OAuth authorization URL
  */
-export function generateAuthUrl(siteId?: string, env: any): { authUrl: string; state: string } {
+export function generateAuthUrl(siteId?: string, env?: any): { authUrl: string; state: string } {
     console.log('generateAuthUrl called with:', { siteId, hasEnv: !!env });
     
-    if (!env) {
-        throw new Error('Environment is required');
-    }
+    // Try multiple sources for client ID
+    const clientId = env?.WEBFLOW_CLIENT_ID || 
+                    (typeof process !== 'undefined' && process.env?.WEBFLOW_CLIENT_ID);
     
-    const clientId = env.WEBFLOW_CLIENT_ID;
     console.log('Client ID found:', !!clientId);
     
     if (!clientId) {
-        console.error('WEBFLOW_CLIENT_ID not found in environment');
+        console.error('WEBFLOW_CLIENT_ID not found in any environment source');
         throw new Error('WEBFLOW_CLIENT_ID not configured');
     }
 
@@ -95,10 +94,7 @@ export function generateAuthUrl(siteId?: string, env: any): { authUrl: string; s
 /**
  * Handle OAuth callback and exchange code for token
  */
-export async function handleCallback(code: string, state: string, env: any): Promise<AuthSession> {
-    if (!env) {
-        throw new Error('Environment is required');
-    }
+export async function handleCallback(code: string, state: string, env?: any): Promise<AuthSession> {
     // Verify state - temporarily more forgiving for debugging
     const storedState = stateStorage.get(state);
     let siteId = undefined;
@@ -124,9 +120,18 @@ export async function handleCallback(code: string, state: string, env: any): Pro
     }
 
     // Exchange code for access token
+    const clientId = env?.WEBFLOW_CLIENT_ID || 
+                    (typeof process !== 'undefined' && process.env?.WEBFLOW_CLIENT_ID);
+    const clientSecret = env?.WEBFLOW_CLIENT_SECRET || 
+                        (typeof process !== 'undefined' && process.env?.WEBFLOW_CLIENT_SECRET);
+    
+    if (!clientId || !clientSecret) {
+        throw new Error('WEBFLOW_CLIENT_ID and WEBFLOW_CLIENT_SECRET are required');
+    }
+    
     const accessToken = await WebflowClient.getAccessToken({
-        clientId: env.WEBFLOW_CLIENT_ID,
-        clientSecret: env.WEBFLOW_CLIENT_SECRET,
+        clientId: clientId,
+        clientSecret: clientSecret,
         code: code,
         redirectUri: getRedirectUri(env),
     });
@@ -281,16 +286,15 @@ export function createAuthenticatedResponse(
 /**
  * Get redirect URI for OAuth
  */
-function getRedirectUri(env: any): string {
+function getRedirectUri(env?: any): string {
     // For Webflow Cloud, construct from environment variables
-    // Priority: explicit site URL, then CF Pages URL, then fallback
-    const baseUrl = env.WEBFLOW_SITE_URL || env.CF_PAGES_URL;
+    // Priority: explicit site URL, then CF Pages URL, then process.env, then fallback
+    const baseUrl = env?.WEBFLOW_SITE_URL || 
+                   env?.CF_PAGES_URL || 
+                   (typeof process !== 'undefined' && process.env?.WEBFLOW_SITE_URL) ||
+                   'https://custom-code-63f9ba.webflow.io';
     
-    if (!baseUrl) {
-        console.warn('No WEBFLOW_SITE_URL or CF_PAGES_URL found, using fallback');
-        // This should be set to your actual Webflow site URL
-        return 'https://custom-code-63f9ba.webflow.io/lucid/auth/callback';
-    }
+    console.log('Using base URL for redirect:', baseUrl);
     
     // Ensure baseUrl doesn't have trailing slash before adding path
     const cleanBaseUrl = baseUrl.replace(/\/$/, '');

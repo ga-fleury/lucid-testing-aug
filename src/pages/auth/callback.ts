@@ -9,7 +9,7 @@ import { handleCallback, createAuthenticatedResponse } from '../../lib/auth-simp
 export const config = {
     runtime: "edge",
 };
-export async function GET(request: Request, { locals }: { locals: any }) {
+export async function GET(request: Request) {
     try {
         const url = new URL(request.url);
         const code = url.searchParams.get('code');
@@ -51,7 +51,8 @@ export async function GET(request: Request, { locals }: { locals: any }) {
         }
 
         // Handle the callback and get session
-        const session = await handleCallback(code, effectiveState, locals?.runtime?.env);
+        const env = (typeof process !== 'undefined' && process.env) ? process.env : null;
+        const session = await handleCallback(code, effectiveState, env);
 
         console.log(`Session created for user: ${session.userEmail}`);
 
