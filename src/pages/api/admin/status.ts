@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { extractSessionId, validateSession, healthCheck } from '../../../lib/auth-kv.js';
 
 /**
  * Simple status API for monitoring
@@ -10,9 +11,20 @@ export const config = {
     runtime: "edge",
 };
 
-export async function GET(request: Request) {
+export async function GET(request: Request, context?: any) {
     try {
-        console.log('Status endpoint called');
+        console.log('Status endpoint called with KV support');
+        
+        // Access Cloudflare runtime environment for KV
+        const env = context?.locals?.runtime?.env;
+        console.log('KV environment available:', !!env);
+        
+        // Check authentication status
+        const sessionId = extractSessionId(request);
+        let authSession = null;
+        if (sessionId) {
+            authSession = await validateSession(sessionId, env);
+        }
         
         // For Webflow Cloud, environment variables are available via import.meta.env at build time
         const hasClientId = !!(import.meta.env.WEBFLOW_CLIENT_ID && 
@@ -23,6 +35,10 @@ export async function GET(request: Request) {
                                    import.meta.env.WEBFLOW_CLIENT_SECRET !== '');
         
         console.log('Environment check:', { hasClientId, hasClientSecret });
+        console.log('Authentication check:', { hasSession: !!authSession });
+        
+        // Get storage health info
+        const storageHealth = await healthCheck(env);
         
         const status = {
             system: {
@@ -30,8 +46,11 @@ export async function GET(request: Request) {
                 timestamp: new Date().toISOString()
             },
             session: {
-                authenticated: false
+                authenticated: !!authSession,
+                userEmail: authSession?.userEmail || null,
+                sessionId: authSession?.sessionId || null
             },
+            storage: storageHealth,
             environment: {
                 nodeEnv: import.meta.env.MODE || 'production',
                 hasClientId: hasClientId,

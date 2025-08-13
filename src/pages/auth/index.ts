@@ -1,4 +1,4 @@
-import { generateAuthUrl } from '../../lib/auth-simple.js';
+import { generateAuthUrl } from '../../lib/auth-kv.js';
 
 /**
  * Simple Webflow OAuth initiation - matches Webflow's official pattern
@@ -9,10 +9,13 @@ import { generateAuthUrl } from '../../lib/auth-simple.js';
 export const config = {
     runtime: "edge",
 };
-export async function GET(request: Request) {
+export async function GET(request: Request, context?: any) {
     try {
-        console.log('Auth endpoint called, request type:', typeof request);
-        console.log('Request URL:', request?.url);
+        console.log('Auth endpoint called with KV support');
+        
+        // Access Cloudflare runtime environment for KV
+        const env = context?.locals?.runtime?.env;
+        console.log('KV environment available:', !!env);
         
         // Simple debug first
         if (!request || !request.url) {
@@ -39,10 +42,10 @@ export async function GET(request: Request) {
         console.log('Generating auth URL for siteId:', siteId);
         console.log('WEBFLOW_CLIENT_ID available:', !!import.meta.env.WEBFLOW_CLIENT_ID);
 
-        // Generate authorization URL
-        const { authUrl, state } = generateAuthUrl(siteId, null);
+        // Generate authorization URL with KV support
+        const { authUrl, state } = generateAuthUrl(siteId, env);
         
-        console.log('Generated auth URL successfully');
+        console.log('Generated auth URL successfully with state:', state.substring(0, 8) + '...');
 
         // Direct redirect for browser access
         return new Response(null, {

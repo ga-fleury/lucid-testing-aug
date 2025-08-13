@@ -1,4 +1,4 @@
-import { handleCallback, createAuthenticatedResponse } from '../../lib/auth-simple.js';
+import { handleCallback, createAuthenticatedResponse } from '../../lib/auth-kv.js';
 
 /**
  * Handle OAuth callback from Webflow authorization
@@ -9,8 +9,14 @@ import { handleCallback, createAuthenticatedResponse } from '../../lib/auth-simp
 export const config = {
     runtime: "edge",
 };
-export async function GET(request: Request) {
+export async function GET(request: Request, context?: any) {
     try {
+        console.log('OAuth callback with KV support');
+        
+        // Access Cloudflare runtime environment for KV
+        const env = context?.locals?.runtime?.env;
+        console.log('KV environment available:', !!env);
+        
         const url = new URL(request.url);
         const code = url.searchParams.get('code');
         const state = url.searchParams.get('state');
@@ -50,11 +56,11 @@ export async function GET(request: Request) {
             console.warn('State parameter missing from OAuth callback - using temporary state for debugging');
         }
 
-        // Handle the callback and get session
-        const env = (typeof process !== 'undefined' && process.env) ? process.env : null;
+        // Handle the callback and get session with KV support
+        console.log('Processing callback with KV storage...');
         const session = await handleCallback(code, effectiveState, env);
 
-        console.log(`Session created for user: ${session.userEmail}`);
+        console.log(`Session created for user: ${session.userEmail} (stored in KV)`);
 
         // Set session cookie and redirect to success page
         const successUrl = session.siteId 
