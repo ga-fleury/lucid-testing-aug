@@ -1,8 +1,0 @@
-{
-  "kv_namespaces": [
-    {
-      "binding": "SESSION_STORE",
-      "id": "lucid-sessions"
-    }
-  ]
-}

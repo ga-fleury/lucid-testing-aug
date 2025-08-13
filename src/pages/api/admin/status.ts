@@ -11,12 +11,12 @@ export const config = {
     runtime: "edge",
 };
 
-export async function GET(request: Request, context?: any) {
+export const GET: APIRoute = async ({ request, locals }) => {
     try {
-        console.log('Status endpoint called with KV support');
+        console.log('Status endpoint called with correct Webflow Cloud signature');
         
-        // Access Cloudflare runtime environment for KV
-        const env = context?.locals?.runtime?.env;
+        // Access Cloudflare runtime environment for KV - Webflow Cloud pattern
+        const env = locals?.runtime?.env;
         console.log('KV environment available:', !!env);
         
         // Check authentication status

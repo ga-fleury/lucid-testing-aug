@@ -243,7 +243,7 @@ npm run preview
 - **`src/modules/`** - Framework modules
 - **`src/pages/api/admin/`** - Admin API endpoints
 - **`webflow.json`** - Webflow Cloud configuration
-- **`astro.config.mjs`** - Astro configuration
+- **`astro.config.js`** - Astro configuration
 
 ### Adding New Modules
 

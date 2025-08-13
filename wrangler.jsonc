@@ -1,0 +1,22 @@
+{
+  "kv_namespaces": [
+    {
+      "binding": "SESSION_STORE",
+      "id": "lucid-sessions"
+    }
+  ],
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "astro",
+  "main": "./dist/_worker.js/index.js",
+  "compatibility_date": "2025-04-15",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

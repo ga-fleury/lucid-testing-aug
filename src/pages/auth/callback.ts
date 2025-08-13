@@ -1,3 +1,4 @@
+import type { APIRoute } from 'astro';
 import { handleCallback, createAuthenticatedResponse } from '../../lib/auth-kv.js';
 
 /**
@@ -9,12 +10,13 @@ import { handleCallback, createAuthenticatedResponse } from '../../lib/auth-kv.j
 export const config = {
     runtime: "edge",
 };
-export async function GET(request: Request, context?: any) {
+
+export const GET: APIRoute = async ({ request, locals }) => {
     try {
-        console.log('OAuth callback with KV support');
+        console.log('OAuth callback with correct Webflow Cloud signature');
         
-        // Access Cloudflare runtime environment for KV
-        const env = context?.locals?.runtime?.env;
+        // Access Cloudflare runtime environment for KV - Webflow Cloud pattern
+        const env = locals?.runtime?.env;
         console.log('KV environment available:', !!env);
         
         const url = new URL(request.url);

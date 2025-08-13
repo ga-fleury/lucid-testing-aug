@@ -12,10 +12,25 @@ export default defineConfig({
   adapter: cloudflare({
     // Explicitly enable KV bindings
     mode: 'advanced',
-    functionPerRoute: false
+    functionPerRoute: false,
+    platformProxy: {
+      enabled: true,
+    }
   }),
   integrations: [react(), svelte()],
+  vite: {
+    resolve: {
+      // Use react-dom/server.edge instead of react-dom/server.browser for React 19.
+      // Without this, MessageChannel from node:worker_threads needs to be polyfilled.
+      alias: import.meta.env.PROD ? {
+        "react-dom/server": "react-dom/server.edge",
+      } : undefined,
+    },
+  },
   base: '/lucid',
+  build: {
+    assetsPrefix: '/lucid',
+  },
   trailingSlash: 'ignore',
   output: 'server',
   server: {

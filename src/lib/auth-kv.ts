@@ -44,10 +44,10 @@ interface StateData {
 
 /**
  * Get KV namespace from runtime environment
- * Uses the SESSION_STORE binding declared in wrangler.json
+ * Uses the SESSION_STORE binding declared in wrangler.jsonc
  */
 function getKV(env?: any): KVNamespace | null {
-    // Access the SESSION_STORE binding from wrangler.json
+    // Access the SESSION_STORE binding from wrangler.jsonc
     if (env?.SESSION_STORE) {
         console.log('Using SESSION_STORE KV namespace');
         return env.SESSION_STORE;

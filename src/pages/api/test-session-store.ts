@@ -3,28 +3,32 @@
  * Tests the session storage functionality
  */
 
+import type { APIRoute } from 'astro';
+
 // Required for Webflow Cloud edge runtime
 export const config = {
     runtime: "edge",
 };
 
-export async function GET(request: Request, context?: any) {
+export const GET: APIRoute = async ({ request, locals }) => {
     try {
-        console.log('Testing SESSION_STORE KV binding');
+        console.log('Testing SESSION_STORE KV binding with correct signature');
         
-        // Access Cloudflare runtime environment
-        const env = context?.locals?.runtime?.env;
+        // Access Cloudflare runtime environment - Webflow Cloud pattern
+        const env = locals?.runtime?.env;
         
         const debug = {
             status: 'testing-session-store',
             timestamp: new Date().toISOString(),
-            note: 'Testing SESSION_STORE KV binding from wrangler.json',
+            note: 'Testing SESSION_STORE KV binding from wrangler.jsonc',
             
             environment: {
                 hasEnv: !!env,
                 envType: typeof env,
                 envKeys: env ? Object.keys(env) : [],
-                hasRuntimeAccess: !!(context?.locals?.runtime)
+                hasLocals: !!locals,
+                hasRuntime: !!(locals?.runtime),
+                runtimeKeys: locals?.runtime ? Object.keys(locals.runtime) : []
             },
             
             kvBinding: {
