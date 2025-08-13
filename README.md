@@ -292,11 +292,33 @@ WEBFLOW_CLIENT_ID                      // undefined
 Object.keys(process.env)               // [] (empty array)
 ```
 
-**Possible Solutions to Investigate:**
-1. Check Webflow Cloud project settings for environment variable configuration
-2. Verify deployment includes environment variables
-3. Check if variables use different names in Webflow Cloud
-4. Investigate if build-time injection is required instead of runtime access
+**Research Findings - Correct Environment Variable Access Pattern:**
+
+Based on Webflow Cloud and Cloudflare Workers documentation:
+
+1. **Webflow Cloud Framework Customization**: States that for Astro, environment variables should be accessed via:
+   ```typescript
+   // In API routes
+   export const GET: APIRoute = async ({ locals }) => {
+     const siteId = locals.runtime.env.WEBFLOW_SITE_ID;
+   };
+   ```
+
+2. **Cloudflare Workers Pattern**: Environment variables are accessed via `env` parameter:
+   ```typescript
+   export default {
+     async fetch(request, env, ctx) {
+       const myVariable = env.MY_VARIABLE;
+     }
+   }
+   ```
+
+3. **Issue**: The `{ locals }` destructuring pattern fails in Webflow Cloud, but the `env` parameter pattern might work.
+
+**Next Steps:**
+1. Test Cloudflare Workers `env` parameter pattern: `/lucid/api/test-workers-env`
+2. If successful, update all API routes to use `env` parameter instead of `locals`
+3. Verify environment variables are properly set in Webflow Cloud project settings
 
 ### Common Issues
 
