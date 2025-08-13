@@ -4,6 +4,11 @@ import { handleCallback, createAuthenticatedResponse } from '../../lib/auth-simp
  * Handle OAuth callback from Webflow authorization
  * Simple implementation matching Webflow's official pattern
  */
+
+// Required for Webflow Cloud edge runtime
+export const config = {
+    runtime: "edge",
+};
 export async function GET(request: Request, { locals }: { locals: any }) {
     try {
         const url = new URL(request.url);
