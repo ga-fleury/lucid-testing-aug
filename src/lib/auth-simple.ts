@@ -245,6 +245,8 @@ export function extractSessionId(request: Request): string | null {
 
     // Check cookie
     const cookieHeader = request.headers.get('cookie') || '';
+    console.log('Raw cookie header:', cookieHeader);
+    
     const cookies: Record<string, string> = {};
     
     cookieHeader.split(';').forEach(cookie => {
@@ -253,6 +255,9 @@ export function extractSessionId(request: Request): string | null {
             cookies[name] = rest.join('=');
         }
     });
+    
+    console.log('Parsed cookies:', cookies);
+    console.log('webflow_session found:', cookies.webflow_session);
 
     return cookies.webflow_session || null;
 }
