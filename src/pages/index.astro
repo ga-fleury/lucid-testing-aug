@@ -1,11 +1,281 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+// Lucid Framework - Admin Interface
 ---
 
-<Layout>
-	<Welcome />
-</Layout>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucid Framework - Admin</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .admin-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+        .status {
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        .status.loading {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        .status.error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        .status.success {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        pre {
+            background: #f9fafb;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <h1>🚀 Lucid Framework Admin</h1>
+        
+        <div id="status" class="status loading">
+            Loading framework status...
+        </div>
+
+        <div id="actions" style="display: none;">
+            <button class="btn btn-primary" onclick="authenticate()">
+                🔐 Authenticate with Webflow
+            </button>
+            
+            <button class="btn btn-primary" onclick="checkStatus()" style="background: #10b981;">
+                📊 Check Status
+            </button>
+        </div>
+
+        <div id="results">
+            <!-- Results will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        let isAuthenticated = false;
+
+        // Check authentication status on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, functions available:', {
+                authenticate: typeof authenticate,
+                checkStatus: typeof checkStatus
+            });
+            checkStatus();
+            document.getElementById('actions').style.display = 'block';
+        });
+
+        window.authenticate = async function() {
+            console.log('Authentication function called');
+            try {
+                console.log('Fetching /lucid/auth');
+                const response = await fetch('/lucid/auth');
+                console.log('Auth response:', response.status, response.ok);
+                
+                if (response.ok) {
+                    console.log('Redirecting to auth');
+                    window.location.href = '/lucid/auth';
+                } else {
+                    console.error('Auth failed with status:', response.status);
+                    showError('Failed to start authentication');
+                }
+            } catch (error) {
+                console.error('Authentication error:', error);
+                showError('Authentication error: ' + error.message);
+            }
+        }
+
+        window.checkStatus = async function() {
+            const statusEl = document.getElementById('status');
+            const resultsEl = document.getElementById('results');
+            
+            statusEl.className = 'status loading';
+            statusEl.textContent = 'Checking status...';
+            
+            try {
+                console.log('Testing simple endpoint first...');
+                
+                // Test the minimal endpoint first
+                const testResponse = await fetch('/lucid/api/test');
+                console.log('Test response status:', testResponse.status);
+                console.log('Test response ok:', testResponse.ok);
+                
+                if (!testResponse.ok) {
+                    throw new Error(`Test endpoint failed: ${testResponse.status}`);
+                }
+                
+                const testData = await testResponse.json();
+                console.log('Test endpoint data:', testData);
+                
+                // Now try the simple status endpoint
+                console.log('Testing simple status endpoint...');
+                const response = await fetch('/lucid/api/admin/status-simple');
+                console.log('Status response status:', response.status);
+                console.log('Status response ok:', response.ok);
+                
+                if (!response.ok) {
+                    throw new Error(`Status endpoint failed: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Status endpoint data:', data);
+                
+                if (response.ok) {
+                    statusEl.className = 'status success';
+                    statusEl.textContent = `System: ${data.system.status} | Test endpoints working`;
+                    
+                    resultsEl.innerHTML = '<h3>System Status (Simple)</h3><pre>' + 
+                        JSON.stringify(data, null, 2) + '</pre>' +
+                        '<h3>Test Endpoint</h3><pre>' + 
+                        JSON.stringify(testData, null, 2) + '</pre>';
+                } else {
+                    throw new Error(data.error || 'Status check failed');
+                }
+            } catch (error) {
+                showError('Status check failed: ' + error.message);
+            }
+        }
+
+        window.showFrameworkActions = function() {
+            const actionsEl = document.getElementById('actions');
+            actionsEl.innerHTML += `
+                <hr style="margin: 1rem 0;">
+                <h3>Framework Actions</h3>
+                <button class="btn btn-primary" onclick="installFramework()" style="background: #10b981;">
+                    ⚡ Install Framework
+                </button>
+                <button class="btn btn-primary" onclick="uninstallFramework()" style="background: #ef4444;">
+                    🗑️ Uninstall Framework
+                </button>
+            `;
+        }
+
+        window.installFramework = async function() {
+            if (!isAuthenticated) {
+                showError('Please authenticate first');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/lucid/api/admin/framework', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'install',
+                        config: {
+                            debug: true,
+                            theme: 'default'
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showSuccess('Framework installed successfully!');
+                    document.getElementById('results').innerHTML += 
+                        '<h3>Installation Result</h3><pre>' + 
+                        JSON.stringify(data, null, 2) + '</pre>';
+                } else {
+                    throw new Error(data.error || 'Installation failed');
+                }
+            } catch (error) {
+                showError('Installation error: ' + error.message);
+            }
+        }
+
+        window.uninstallFramework = async function() {
+            if (!isAuthenticated) {
+                showError('Please authenticate first');
+                return;
+            }
+            
+            if (!confirm('Are you sure you want to uninstall the framework?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/lucid/api/admin/framework', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action: 'uninstall' })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showSuccess('Framework uninstalled successfully!');
+                    document.getElementById('results').innerHTML += 
+                        '<h3>Uninstallation Result</h3><pre>' + 
+                        JSON.stringify(data, null, 2) + '</pre>';
+                } else {
+                    throw new Error(data.error || 'Uninstallation failed');
+                }
+            } catch (error) {
+                showError('Uninstallation error: ' + error.message);
+            }
+        }
+
+        window.showError = function(message) {
+            const statusEl = document.getElementById('status');
+            statusEl.className = 'status error';
+            statusEl.textContent = '❌ ' + message;
+        }
+
+        window.showSuccess = function(message) {
+            const statusEl = document.getElementById('status');
+            statusEl.className = 'status success';
+            statusEl.textContent = '✅ ' + message;
+        }
+    </script>
+</body>
+</html>
