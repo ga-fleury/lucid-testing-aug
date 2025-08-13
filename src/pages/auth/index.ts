@@ -11,46 +11,44 @@ export const config = {
 };
 export async function GET(request: Request) {
     try {
-        console.log('Auth endpoint called');
+        console.log('Auth endpoint called, request type:', typeof request);
+        console.log('Request URL:', request?.url);
         
-        const url = new URL(request.url);
-        const siteId = url.searchParams.get('site_id');
-        
-        console.log('Generating auth URL for siteId:', siteId);
-
-        // For Webflow Cloud, try process.env or null to trigger fallback
-        const env = (typeof process !== 'undefined' && process.env) ? process.env : null;
-        console.log('Environment available:', !!env);
-        
-        if (env) {
-            console.log('Environment WEBFLOW_CLIENT_ID available:', !!env.WEBFLOW_CLIENT_ID);
+        // Simple debug first
+        if (!request || !request.url) {
+            return new Response(JSON.stringify({
+                error: 'Invalid request object',
+                requestExists: !!request,
+                urlExists: !!(request?.url)
+            }), {
+                status: 400,
+                headers: { "Content-Type": "application/json" }
+            });
         }
 
-        // Generate authorization URL (will use fallback if env is null)
-        console.log('About to call generateAuthUrl');
-        const { authUrl, state } = generateAuthUrl(siteId, env);
-        console.log('generateAuthUrl completed successfully');
+        // Get site ID from query parameters (optional)
+        let siteId = null;
+        try {
+            const url = new URL(request.url);
+            siteId = url.searchParams.get('site_id');
+        } catch (urlError) {
+            console.warn('URL parsing failed:', urlError);
+            // Continue without site ID
+        }
+        
+        console.log('Generating auth URL for siteId:', siteId);
+        console.log('WEBFLOW_CLIENT_ID available:', !!import.meta.env.WEBFLOW_CLIENT_ID);
+
+        // Generate authorization URL
+        const { authUrl, state } = generateAuthUrl(siteId, null);
         
         console.log('Generated auth URL successfully');
 
-        // Check if this is an AJAX request
-        const isAjax = request.headers.get('X-Requested-With') === 'XMLHttpRequest';
-        
-        if (isAjax) {
-            return new Response(
-                JSON.stringify({ 
-                    authUrl: authUrl,
-                    state: state 
-                }), 
-                { status: 200, headers: { "Content-Type": "application/json" } }
-            );
-        } else {
-            // Direct redirect for browser access
-            return new Response(null, {
-                status: 302,
-                headers: { Location: authUrl }
-            });
-        }
+        // Direct redirect for browser access
+        return new Response(null, {
+            status: 302,
+            headers: { Location: authUrl }
+        });
 
     } catch (error: any) {
         console.error("Error starting auth flow:", error);
