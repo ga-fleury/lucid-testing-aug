@@ -340,10 +340,39 @@ const clientId = import.meta.env.WEBFLOW_CLIENT_ID;
 const clientId = import.meta.env.PUBLIC_WEBFLOW_CLIENT_ID;
 ```
 
-**Next Steps:**
-1. ⏳ Test `import.meta.env` pattern: `/lucid/api/test-import-meta`
-2. If successful, update all API routes to use `import.meta.env`
-3. Consider adding `PUBLIC_` prefix to environment variables if needed
+🎉 **BREAKTHROUGH - Working Environment Variable Pattern Found!**
+
+✅ **`import.meta.env` Test Results**: `/lucid/api/test-import-meta`
+```json
+{
+  "importMeta": {
+    "hasImportMeta": true,
+    "hasEnv": true,
+    "envType": "object"
+  },
+  "environmentVariables": {
+    "availableKeys": [
+      "ASSETS_PREFIX", "BASE_URL", "DEV", "MODE", "PROD", "SITE", "SSR",
+      "WEBFLOW_CLIENT_ID", "WEBFLOW_CLIENT_SECRET"
+    ]
+  }
+}
+```
+
+✅ **SOLUTION FOUND**: Environment variables ARE available via `import.meta.env` at build time!
+
+**Working Pattern**:
+```typescript
+// ✅ CORRECT - Works in Webflow Cloud
+const clientId = import.meta.env.WEBFLOW_CLIENT_ID;
+const clientSecret = import.meta.env.WEBFLOW_CLIENT_SECRET;
+```
+
+**Implementation Updates**:
+- ✅ Updated `src/pages/api/admin/status.ts` to use `import.meta.env`
+- ✅ Updated `src/lib/auth-simple.ts` with `import.meta.env` fallback
+- ⏳ Test authentication flow: Check `/lucid` status endpoint
+- ⏳ Verify values with `/lucid/api/test-env-values`
 
 ### Common Issues
 

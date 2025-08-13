@@ -53,6 +53,7 @@ export function generateAuthUrl(siteId?: string, env?: any): { authUrl: string; 
     
     // Try multiple sources for client ID
     const clientId = env?.WEBFLOW_CLIENT_ID || 
+                    import.meta.env?.WEBFLOW_CLIENT_ID ||
                     (typeof process !== 'undefined' && process.env?.WEBFLOW_CLIENT_ID);
     
     console.log('Client ID found:', !!clientId);
@@ -121,8 +122,10 @@ export async function handleCallback(code: string, state: string, env?: any): Pr
 
     // Exchange code for access token
     const clientId = env?.WEBFLOW_CLIENT_ID || 
+                    import.meta.env?.WEBFLOW_CLIENT_ID ||
                     (typeof process !== 'undefined' && process.env?.WEBFLOW_CLIENT_ID);
     const clientSecret = env?.WEBFLOW_CLIENT_SECRET || 
+                        import.meta.env?.WEBFLOW_CLIENT_SECRET ||
                         (typeof process !== 'undefined' && process.env?.WEBFLOW_CLIENT_SECRET);
     
     if (!clientId || !clientSecret) {
@@ -288,9 +291,10 @@ export function createAuthenticatedResponse(
  */
 function getRedirectUri(env?: any): string {
     // For Webflow Cloud, construct from environment variables
-    // Priority: explicit site URL, then CF Pages URL, then process.env, then fallback
+    // Priority: explicit site URL, then CF Pages URL, import.meta.env, then process.env, then fallback
     const baseUrl = env?.WEBFLOW_SITE_URL || 
                    env?.CF_PAGES_URL || 
+                   import.meta.env?.WEBFLOW_SITE_URL ||
                    (typeof process !== 'undefined' && process.env?.WEBFLOW_SITE_URL) ||
                    'https://custom-code-63f9ba.webflow.io';
     

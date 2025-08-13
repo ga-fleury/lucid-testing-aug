@@ -14,10 +14,13 @@ export async function GET(request: Request) {
     try {
         console.log('Status endpoint called');
         
-        // For Webflow Cloud, environment variables should be available via process.env
-        // or injected as globals during build time
-        const hasClientId = typeof process !== 'undefined' && !!process.env.WEBFLOW_CLIENT_ID;
-        const hasClientSecret = typeof process !== 'undefined' && !!process.env.WEBFLOW_CLIENT_SECRET;
+        // For Webflow Cloud, environment variables are available via import.meta.env at build time
+        const hasClientId = !!(import.meta.env.WEBFLOW_CLIENT_ID && 
+                               import.meta.env.WEBFLOW_CLIENT_ID !== '${WEBFLOW_CLIENT_ID}' &&
+                               import.meta.env.WEBFLOW_CLIENT_ID !== '');
+        const hasClientSecret = !!(import.meta.env.WEBFLOW_CLIENT_SECRET && 
+                                   import.meta.env.WEBFLOW_CLIENT_SECRET !== '${WEBFLOW_CLIENT_SECRET}' &&
+                                   import.meta.env.WEBFLOW_CLIENT_SECRET !== '');
         
         console.log('Environment check:', { hasClientId, hasClientSecret });
         
@@ -30,11 +33,12 @@ export async function GET(request: Request) {
                 authenticated: false
             },
             environment: {
-                nodeEnv: (typeof process !== 'undefined' && process.env?.NODE_ENV) || 'production',
+                nodeEnv: import.meta.env.MODE || 'production',
                 hasClientId: hasClientId,
                 hasClientSecret: hasClientSecret,
                 deployedOn: 'webflow-cloud',
-                hasProcessEnv: typeof process !== 'undefined' && !!process.env
+                hasImportMetaEnv: !!import.meta.env,
+                envKeys: Object.keys(import.meta.env)
             },
             timestamp: new Date().toISOString()
         };
