@@ -78,8 +78,17 @@ export const GET: APIRoute = async ({ request, locals }) => {
             ? `/lucid/?site=${session.siteId}` 
             : `/lucid/`;
 
-        const cookieValue = `webflow_session=${session.sessionId}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${24 * 60 * 60}`;
-        console.log('Setting cookie:', cookieValue);
+        // WORKAROUND: Store session data in cookie due to Cloudflare Workers memory limitations
+        const sessionData = {
+            sessionId: session.sessionId,
+            userEmail: session.userEmail,
+            siteId: session.siteId,
+            expiresAt: Date.now() + (24 * 60 * 60 * 1000)
+        };
+        
+        const encodedSessionData = btoa(JSON.stringify(sessionData));
+        const cookieValue = `webflow_session_data=${encodedSessionData}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${24 * 60 * 60}`;
+        console.log('Setting session data cookie');
 
         return new Response(null, {
             status: 302,

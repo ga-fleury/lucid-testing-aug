@@ -151,13 +151,18 @@ export async function handleCallback(code: string, state: string, env?: any): Pr
     const sessionId = crypto.randomBytes(32).toString('hex');
     
     // Store token with 24 hour expiration
-    tokenStorage.set(sessionId, {
+    const sessionData = {
         accessToken,
         userEmail: userInfo.email,
         siteId: siteId,
         expiresAt: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
         createdAt: Date.now()
-    });
+    };
+    
+    tokenStorage.set(sessionId, sessionData);
+    console.log('Session stored with ID:', sessionId);
+    console.log('Total sessions after storage:', tokenStorage.size);
+    console.log('Session data stored:', { userEmail: userInfo.email, siteId: siteId });
 
     return {
         accessToken,
@@ -168,7 +173,26 @@ export async function handleCallback(code: string, state: string, env?: any): Pr
 }
 
 /**
- * Validate session and return auth info
+ * Validate session from cookie data (new approach)
+ */
+export function validateSessionFromRequest(request: Request): AuthSession | null {
+    const sessionData = extractSessionData(request);
+    if (!sessionData) {
+        return null;
+    }
+    
+    // For cookie-based sessions, we don't have the access token stored
+    // We'll need to handle this differently for API calls that need the token
+    return {
+        accessToken: '', // Not stored in cookie for security
+        userEmail: sessionData.userEmail,
+        siteId: sessionData.siteId,
+        sessionId: sessionData.sessionId
+    };
+}
+
+/**
+ * Validate session and return auth info (legacy - memory storage)
  */
 export function validateSession(sessionId: string): AuthSession | null {
     const session = tokenStorage.get(sessionId);
@@ -227,39 +251,56 @@ export async function isAuthorizedForSite(sessionId: string, siteId: string): Pr
 }
 
 /**
- * Extract session ID from request
+ * Extract session data from request (now from cookie directly)
+ */
+export function extractSessionData(request: Request): any | null {
+    try {
+        // Check cookie for session data
+        const cookieHeader = request.headers.get('cookie') || '';
+        console.log('Raw cookie header:', cookieHeader);
+        
+        const cookies: Record<string, string> = {};
+        
+        cookieHeader.split(';').forEach(cookie => {
+            const [name, ...rest] = cookie.trim().split('=');
+            if (name && rest.length > 0) {
+                cookies[name] = rest.join('=');
+            }
+        });
+        
+        console.log('Parsed cookies:', Object.keys(cookies));
+        
+        const sessionCookie = cookies.webflow_session_data;
+        if (!sessionCookie) {
+            console.log('No webflow_session_data cookie found');
+            return null;
+        }
+        
+        // Decode session data from cookie
+        const sessionDataJson = atob(sessionCookie);
+        const sessionData = JSON.parse(sessionDataJson);
+        
+        // Check if session is expired
+        if (sessionData.expiresAt < Date.now()) {
+            console.log('Session expired');
+            return null;
+        }
+        
+        console.log('Session data extracted:', { userEmail: sessionData.userEmail, siteId: sessionData.siteId });
+        return sessionData;
+        
+    } catch (error) {
+        console.error('Error extracting session data:', error);
+        return null;
+    }
+}
+
+/**
+ * Extract session ID from request (legacy support)
  */
 export function extractSessionId(request: Request): string | null {
-    // Check Authorization header
-    const authHeader = request.headers.get('Authorization');
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-        return authHeader.substring(7);
-    }
-
-    // Check query parameter
-    const url = new URL(request.url);
-    const sessionParam = url.searchParams.get('session');
-    if (sessionParam) {
-        return sessionParam;
-    }
-
-    // Check cookie
-    const cookieHeader = request.headers.get('cookie') || '';
-    console.log('Raw cookie header:', cookieHeader);
-    
-    const cookies: Record<string, string> = {};
-    
-    cookieHeader.split(';').forEach(cookie => {
-        const [name, ...rest] = cookie.trim().split('=');
-        if (name && rest.length > 0) {
-            cookies[name] = rest.join('=');
-        }
-    });
-    
-    console.log('Parsed cookies:', cookies);
-    console.log('webflow_session found:', cookies.webflow_session);
-
-    return cookies.webflow_session || null;
+    const sessionData = extractSessionData(request);
+    return sessionData?.sessionId || null;
 }
 
 /**

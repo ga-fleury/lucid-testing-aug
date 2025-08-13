@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { extractSessionId, validateSession, healthCheck } from '../../../lib/auth-simple.js';
+import { extractSessionId, validateSession, validateSessionFromRequest, healthCheck } from '../../../lib/auth-simple.js';
 
 /**
  * Simple status API for monitoring
@@ -19,17 +19,14 @@ export const GET: APIRoute = async ({ request, locals }) => {
         const env = locals?.runtime?.env;
         console.log('Environment available:', !!env);
         
-        // Check authentication status
-        const sessionId = extractSessionId(request);
-        console.log('Session ID extracted:', sessionId);
-        console.log('Request cookies:', request.headers.get('cookie'));
+        // Check authentication status using new cookie-based approach
+        const authSession = validateSessionFromRequest(request);
+        console.log('Session validation result:', !!authSession);
         
-        let authSession = null;
-        if (sessionId) {
-            authSession = validateSession(sessionId);
-            console.log('Session validation result:', !!authSession);
+        if (authSession) {
+            console.log('Authenticated user:', authSession.userEmail);
         } else {
-            console.log('No session ID found in request');
+            console.log('No valid session found');
         }
         
         // Check environment variables
@@ -50,7 +47,8 @@ export const GET: APIRoute = async ({ request, locals }) => {
             session: {
                 authenticated: !!authSession,
                 userEmail: authSession?.userEmail || null,
-                sessionId: authSession?.sessionId || null
+                sessionId: authSession?.sessionId || null,
+                siteId: authSession?.siteId || null
             },
             storage: storageHealth,
             environment: {
