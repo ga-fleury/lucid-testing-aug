@@ -419,11 +419,43 @@ const clientSecret = import.meta.env.WEBFLOW_CLIENT_SECRET;
 
 **Hypothesis**: Secret variables in Webflow Cloud might require a different access pattern than regular environment variables.
 
-**Investigation Required**:
-1. ⏳ Test `/lucid/api/test-secrets` - Check all possible access patterns
-2. Check if secret variables are available via `env` parameter in API routes
-3. Consider if secret variables need different configuration in `webflow.json`
-4. Research Webflow Cloud documentation for secret variable access patterns
+**Secret Variables Test Results**: `/lucid/api/test-secrets`
+```json
+{
+  "accessPatterns": {
+    "importMetaEnv": {
+      "clientId": {
+        "available": true,
+        "type": "undefined"        // ❌ Still no value
+      },
+      "clientSecret": {
+        "available": false,        // ❌ Secret variable not accessible
+        "type": "undefined"
+      }
+    },
+    "envParameter": {
+      "note": "env parameter not available"  // ❌ No env parameter
+    }
+  },
+  "summary": {
+    "canAuthenticate": false     // ❌ No working access pattern
+  }
+}
+```
+
+**Findings**:
+- ❌ **Secret variables**: Completely inaccessible via any tested method
+- ❌ **Regular variables**: Detected but values still `undefined`
+- ❌ **No runtime access**: `env` parameter, `process.env`, global scope all fail
+
+**Recommended Solution**:
+1. **Mark BOTH variables as regular environment variables** (not secret) in Webflow Cloud
+2. **Redeploy** the project
+3. **Test** `/lucid/api/test-final` to verify both variables are accessible
+4. **If working**: Authentication should function properly
+5. **Security note**: This exposes client secret in build logs, but it's the only working pattern
+
+**Alternative Approach**: Consider client-side OAuth flow that doesn't require server-side secrets.
 
 ### Common Issues
 
