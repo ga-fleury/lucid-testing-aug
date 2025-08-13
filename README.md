@@ -448,14 +448,64 @@ const clientSecret = import.meta.env.WEBFLOW_CLIENT_SECRET;
 - ❌ **Regular variables**: Detected but values still `undefined`
 - ❌ **No runtime access**: `env` parameter, `process.env`, global scope all fail
 
-**Recommended Solution**:
-1. **Mark BOTH variables as regular environment variables** (not secret) in Webflow Cloud
-2. **Redeploy** the project
-3. **Test** `/lucid/api/test-final` to verify both variables are accessible
-4. **If working**: Authentication should function properly
-5. **Security note**: This exposes client secret in build logs, but it's the only working pattern
+🔍 **Final Diagnostic Results**: `/lucid/api/test-final`
+```json
+{
+  "environmentVariables": {
+    "webflowClientId": {
+      "inKeys": true,           // ✅ Variable is configured
+      "type": "undefined",      // ❌ But value is undefined
+      "hasValue": false
+    },
+    "webflowClientSecret": {
+      "inKeys": false,          // ❌ Still marked as secret
+      "type": "undefined"
+    },
+    "authLibraryTest": {
+      "success": false,
+      "error": "WEBFLOW_CLIENT_ID not configured"  // ❌ Auth fails
+    }
+  }
+}
+```
 
-**Alternative Approach**: Consider client-side OAuth flow that doesn't require server-side secrets.
+🎯 **ACTUAL ROOT CAUSE DISCOVERED**: 
+
+**Webflow Cloud Documentation States:**
+> "Environment variables are available at runtime only. Environment variables are not available at build time—only during runtime."
+
+**Our Problem**: We've been trying to access environment variables at **build time** via `import.meta.env`, but Webflow Cloud only provides them at **runtime**!
+
+**Why `import.meta.env` Shows `undefined`**:
+- `import.meta.env` is build-time access
+- Webflow Cloud doesn't inject variables until runtime
+- Variables exist in configuration but have no values during build
+
+## 🔧 **SOLUTION: Runtime Environment Variable Access**
+
+**The Fix**: Update API routes to access environment variables at **runtime** instead of build time.
+
+**New Test**: `/lucid/api/test-runtime` 
+- Tests different runtime access patterns
+- Based on Webflow Cloud documentation: `context.locals.runtime.env`
+- Checks if environment variables are available at runtime
+
+### Next Steps:
+1. ⏳ **Test runtime access**: Visit `/lucid/api/test-runtime`
+2. ✅ **Identify working pattern**: Find correct runtime access method
+3. 🔧 **Update API routes**: Switch from `import.meta.env` to runtime access
+4. 🎯 **Enable authentication**: OAuth should work with runtime variables
+
+**Expected Solution Pattern**:
+```typescript
+// ❌ OLD: Build-time access (doesn't work)
+const clientId = import.meta.env.WEBFLOW_CLIENT_ID;
+
+// ✅ NEW: Runtime access (should work)
+export async function GET(request: Request, context: any) {
+    const clientId = context.locals.runtime.env.WEBFLOW_CLIENT_ID;
+}
+```
 
 ### Common Issues
 
