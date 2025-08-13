@@ -21,9 +21,15 @@ export const GET: APIRoute = async ({ request, locals }) => {
         
         // Check authentication status
         const sessionId = extractSessionId(request);
+        console.log('Session ID extracted:', sessionId);
+        console.log('Request cookies:', request.headers.get('cookie'));
+        
         let authSession = null;
         if (sessionId) {
             authSession = validateSession(sessionId);
+            console.log('Session validation result:', !!authSession);
+        } else {
+            console.log('No session ID found in request');
         }
         
         // Check environment variables

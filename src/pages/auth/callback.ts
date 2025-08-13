@@ -71,18 +71,21 @@ export const GET: APIRoute = async ({ request, locals }) => {
         console.log('Processing callback...');
         const session = await handleCallback(code, effectiveState, env);
 
-        console.log(`Session created for user: ${session.userEmail}`);
+        console.log(`Session created for user: ${session.userEmail}, sessionId: ${session.sessionId}`);
 
         // Set session cookie and redirect to success page
         const successUrl = session.siteId 
             ? `/lucid/?site=${session.siteId}` 
             : `/lucid/`;
 
+        const cookieValue = `webflow_session=${session.sessionId}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${24 * 60 * 60}`;
+        console.log('Setting cookie:', cookieValue);
+
         return new Response(null, {
             status: 302,
             headers: { 
                 Location: successUrl,
-                'Set-Cookie': `webflow_session=${session.sessionId}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${24 * 60 * 60}`
+                'Set-Cookie': cookieValue
             }
         });
 
