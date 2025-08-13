@@ -90,6 +90,10 @@
             <button class="btn btn-primary" onclick="checkStatus()" style="background: #10b981;">
                 📊 Check Status
             </button>
+            
+            <button class="btn btn-primary" onclick="debugSession()" style="background: #f59e0b;">
+                🐛 Debug Session
+            </button>
         </div>
 
         <div id="results">
@@ -292,6 +296,29 @@
             const statusEl = document.getElementById('status');
             statusEl.className = 'status success';
             statusEl.textContent = '✅ ' + message;
+        }
+
+        window.debugSession = async function() {
+            try {
+                console.log('Debug session function called');
+                const response = await fetch('/lucid/api/debug-session');
+                const data = await response.json();
+                
+                console.log('Session debug data:', data);
+                
+                const resultsEl = document.getElementById('results');
+                resultsEl.innerHTML = '<h3>Session Debug Info</h3><pre>' + 
+                    JSON.stringify(data, null, 2) + '</pre>';
+                    
+                if (data.sessionValidation.isValid) {
+                    showSuccess('Session is valid!');
+                } else {
+                    showError('Session is not valid or not found');
+                }
+            } catch (error) {
+                console.error('Debug session error:', error);
+                showError('Debug session error: ' + error.message);
+            }
         }
     </script>
 </body>
