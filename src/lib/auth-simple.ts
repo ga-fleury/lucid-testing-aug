@@ -4,7 +4,22 @@
  */
 
 import { WebflowClient } from "webflow-api";
-import crypto from "crypto";
+
+// Use Web Crypto API for edge runtime compatibility (Cloudflare Workers)
+const crypto = {
+    randomBytes: (size: number) => {
+        const array = new Uint8Array(size);
+        globalThis.crypto.getRandomValues(array);
+        return {
+            toString: (encoding: string) => {
+                if (encoding === 'hex') {
+                    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+                }
+                throw new Error(`Encoding ${encoding} not supported`);
+            }
+        };
+    }
+};
 
 // Simple in-memory token storage for Webflow Cloud
 // In production, this will persist across requests within the same worker instance
