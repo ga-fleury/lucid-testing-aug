@@ -27,6 +27,11 @@ export async function GET(request: Request, context?: any) {
             },
             
             kvBindings: {
+                SESSION_STORE: {
+                    available: !!(env?.SESSION_STORE),
+                    type: typeof env?.SESSION_STORE,
+                    methods: env?.SESSION_STORE ? Object.getOwnPropertyNames(Object.getPrototypeOf(env.SESSION_STORE)) : []
+                },
                 SESSION: {
                     available: !!(env?.SESSION),
                     type: typeof env?.SESSION,
@@ -44,8 +49,8 @@ export async function GET(request: Request, context?: any) {
             }
         };
         
-        // Test KV operations if available
-        const kv = env?.SESSION || env?.KV;
+        // Test KV operations if available - try SESSION_STORE first
+        const kv = env?.SESSION_STORE || env?.SESSION || env?.KV;
         if (kv) {
             console.log('KV namespace found, testing operations...');
             

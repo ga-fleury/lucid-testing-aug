@@ -44,15 +44,21 @@ interface StateData {
 
 /**
  * Get KV namespace from runtime environment
+ * Uses the SESSION_STORE binding declared in wrangler.json
  */
 function getKV(env?: any): KVNamespace | null {
-    // Try multiple ways to access KV binding
+    // Access the SESSION_STORE binding from wrangler.json
+    if (env?.SESSION_STORE) {
+        console.log('Using SESSION_STORE KV namespace');
+        return env.SESSION_STORE;
+    }
+    
+    // Fallback attempts for other common names
     if (env?.SESSION) return env.SESSION;
     if (env?.KV) return env.KV;
-    if ((globalThis as any).SESSION) return (globalThis as any).SESSION;
-    if ((globalThis as any).KV) return (globalThis as any).KV;
     
-    console.warn('KV namespace not found - falling back to in-memory storage');
+    console.warn('SESSION_STORE KV namespace not found - falling back to in-memory storage');
+    console.warn('Available env keys:', env ? Object.keys(env) : 'no env');
     return null;
 }
 
