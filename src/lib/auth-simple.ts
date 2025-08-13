@@ -137,8 +137,14 @@ export async function handleCallback(code: string, state: string, env?: any): Pr
     }
 
     // Get user info
+    console.log('Creating Webflow client with token:', !!accessToken);
     const webflow = new WebflowClient({ accessToken });
-    const userInfo = await webflow.user.get();
+    console.log('Webflow client created:', !!webflow);
+    console.log('Available webflow methods:', Object.keys(webflow || {}));
+    
+    // Use the correct method to get authorized user info
+    const userInfo = await webflow.token.authorizedBy();
+    console.log('User info retrieved:', !!userInfo, userInfo);
 
     // Generate session ID
     const sessionId = crypto.randomBytes(32).toString('hex');
