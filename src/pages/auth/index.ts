@@ -4,9 +4,16 @@ import { generateAuthUrl } from '../../lib/auth-simple.js';
  * Simple Webflow OAuth initiation - matches Webflow's official pattern
  * GET /auth - Start OAuth flow
  */
+
+// Required for Webflow Cloud edge runtime
+export const config = {
+    runtime: "edge",
+};
 export async function GET(request: Request, { locals }: { locals: any }) {
     try {
         console.log('Auth endpoint called');
+        console.log('Locals available:', !!locals);
+        console.log('Runtime available:', !!locals?.runtime);
         
         const url = new URL(request.url);
         const siteId = url.searchParams.get('site_id');
@@ -15,14 +22,19 @@ export async function GET(request: Request, { locals }: { locals: any }) {
 
         // Get environment variables from Webflow Cloud runtime
         const env = locals?.runtime?.env;
+        console.log('Environment available:', !!env);
+        
         if (!env) {
+            console.error('Runtime environment not available');
             throw new Error('Runtime environment not available');
         }
         
-        console.log('Environment available:', !!env.WEBFLOW_CLIENT_ID);
+        console.log('Environment WEBFLOW_CLIENT_ID available:', !!env.WEBFLOW_CLIENT_ID);
 
         // Generate authorization URL
+        console.log('About to call generateAuthUrl');
         const { authUrl, state } = generateAuthUrl(siteId, env);
+        console.log('generateAuthUrl completed successfully');
         
         console.log('Generated auth URL successfully');
 
