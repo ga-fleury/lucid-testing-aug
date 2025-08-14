@@ -8,7 +8,23 @@ const { user, isAuthenticated } = Astro.locals;
 console.info('Admin interface accessed:', { 
     authenticated: isAuthenticated,
     userEmail: user?.userEmail || 'anonymous',
-    middlewareActive: user !== undefined
+    middlewareActive: user !== undefined,
+    hasUser: !!user,
+    userType: typeof user,
+    localsKeys: Object.keys(Astro.locals)
+});
+
+// Debug: Check if middleware provided the expected data
+if (user === undefined) {
+    console.warn('⚠️ Middleware did not provide user data - middleware may have failed');
+}
+
+// Debug: Log cookie information for debugging
+const cookieHeader = Astro.request.headers.get('cookie');
+console.info('Request cookies for debugging:', {
+    hasCookieHeader: !!cookieHeader,
+    cookieLength: cookieHeader?.length || 0,
+    hasSessionCookie: cookieHeader?.includes('webflow_session') || false
 });
 ---
 
@@ -120,6 +136,10 @@ console.info('Admin interface accessed:', {
             
             <button class="btn btn-primary" onclick="testMiddleware()" style="background: #8b5cf6;">
                 🛡️ Test Middleware
+            </button>
+            
+            <button class="btn btn-primary" onclick="debugConsistency()" style="background: #ec4899;">
+                🔍 Debug Consistency
             </button>
         </div>
 
@@ -370,6 +390,53 @@ console.info('Admin interface accessed:', {
             } catch (error) {
                 console.error('Middleware test error:', error);
                 showError('Middleware test error: ' + error.message);
+            }
+        }
+
+        window.debugConsistency = async function() {
+            try {
+                console.log('🔍 Running middleware consistency debug...');
+                const response = await fetch('/lucid/api/debug-middleware-consistency');
+                const data = await response.json();
+                
+                console.log('Consistency debug results:', data);
+                
+                const resultsEl = document.getElementById('results');
+                
+                // Highlight inconsistencies
+                let statusMessage = '';
+                let statusClass = '';
+                
+                if (data.consistency.isConsistent) {
+                    if (data.consistency.bothAuthenticated) {
+                        statusMessage = '✅ CONSISTENT: Both middleware and direct validation show AUTHENTICATED';
+                        statusClass = 'success';
+                    } else {
+                        statusMessage = '✅ CONSISTENT: Both middleware and direct validation show NOT AUTHENTICATED';
+                        statusClass = 'success';
+                    }
+                } else {
+                    statusMessage = '⚠️ INCONSISTENCY DETECTED: ' + data.consistency.inconsistencyType;
+                    statusClass = 'error';
+                }
+                
+                resultsEl.innerHTML = `
+                    <h3>🔍 Middleware Consistency Debug</h3>
+                    <div class="status ${statusClass}" style="margin: 1rem 0;">
+                        ${statusMessage}
+                    </div>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+                if (data.consistency.isConsistent) {
+                    showSuccess('Authentication state is consistent');
+                } else {
+                    showError('Inconsistency detected: ' + data.consistency.inconsistencyType);
+                }
+                
+            } catch (error) {
+                console.error('❌ Consistency debug error:', error);
+                showError('Consistency debug error: ' + error.message);
             }
         }
     </script>
