@@ -46,7 +46,7 @@ const cookieHeader = Astro.request.headers.get('cookie');
 console.info('Request cookies for debugging:', {
     hasCookieHeader: !!cookieHeader,
     cookieLength: cookieHeader?.length || 0,
-    hasSessionCookie: cookieHeader?.includes('webflow_session') || false
+    hasSessionCookie: cookieHeader?.includes('webflow_session_data') || false
 });
 ---
 

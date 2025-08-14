@@ -20,7 +20,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
         
         // Extract cookie information
         const cookieHeader = request.headers.get('cookie');
-        const sessionCookieMatch = cookieHeader?.match(/webflow_session=([^;]+)/);
+        const sessionCookieMatch = cookieHeader?.match(/webflow_session_data=([^;]+)/);
         const sessionCookieValue = sessionCookieMatch?.[1];
         
         // Parse the session cookie if it exists

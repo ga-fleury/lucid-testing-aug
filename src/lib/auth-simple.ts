@@ -315,7 +315,7 @@ export function createAuthenticatedResponse(
     
     // Set session cookie
     const cookieOptions = [
-        `webflow_session=${sessionId}`,
+        `webflow_session_data=${sessionId}`,
         'HttpOnly',
         'Secure',
         'SameSite=Strict',

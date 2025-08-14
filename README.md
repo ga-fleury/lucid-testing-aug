@@ -241,10 +241,37 @@ npm run preview
 ### Project Structure
 
 - **`src/lib/auth-simple.ts`** - Authentication utilities
-- **`src/modules/`** - Framework modules
+- **`src/lib/auth-middleware.ts`** - Global authentication middleware system
+- **`src/middleware.ts`** - Astro middleware entry point
+- **`src/modules/`** - Framework modules  
 - **`src/pages/api/admin/`** - Admin API endpoints
+- **`src/pages/api/debug-*.ts`** - Debug and consistency testing endpoints
+- **`src/env.d.ts`** - TypeScript definitions for Astro.locals extensions
 - **`webflow.json`** - Webflow Cloud configuration
 - **`astro.config.js`** - Astro configuration
+
+### Middleware System Architecture
+
+```typescript
+// src/middleware.ts - Entry point
+export async function onRequest(context: APIContext, next: MiddlewareNext) {
+    const authSession = validateSessionFromRequest(request);
+    locals.user = authSession;
+    locals.isAuthenticated = !!authSession;
+    
+    // Route-specific handling
+    const protectionLevel = classifyRoute(pathname);
+    return handleRouteProtection(protectionLevel, context, next);
+}
+
+// src/lib/auth-middleware.ts - Route classification  
+export enum ProtectionLevel {
+    CRITICAL_API = 'CRITICAL_API',      // Require auth, 401 if not
+    PROTECTED_PAGE = 'PROTECTED_PAGE',  // Require auth, redirect if not
+    AUTH_PAGE = 'AUTH_PAGE',            // Redirect if already authed
+    PUBLIC_ENHANCED = 'PUBLIC_ENHANCED' // Add auth context, always allow
+}
+```
 
 ### Adding New Modules
 
@@ -253,9 +280,9 @@ npm run preview
 3. Implement `init()` and `destroy()` methods
 4. Use `data-module="modulename"` in HTML
 
-## ✅ Status: FULLY FUNCTIONAL (2025-08-13)
+## ✅ Status: FULLY FUNCTIONAL (2025-08-14)
 
-**🎉 Authentication Working**: The OAuth flow is now fully functional with complete session management.
+**🎉 Authentication + Middleware Working**: The OAuth flow is fully functional with complete global authentication middleware system.
 
 **Latest Test Results:**
 ```json
@@ -263,8 +290,13 @@ npm run preview
   "session": {
     "authenticated": true,
     "userEmail": "gabrielfleury95@gmail.com",
-    "sessionId": "26e6bbb70af78b00d04557d12161262379ee02a313de647b48078c340348c88e",
+    "sessionId": "24483ab8a11f139b592a7c07541eb280cedad283e4d601b0fcb29d703bc6e167",
     "siteId": null
+  },
+  "middleware": {
+    "active": true,
+    "providedAuthData": true,
+    "isAuthenticatedFlag": true
   },
   "environment": {
     "hasClientId": true,
@@ -273,6 +305,22 @@ npm run preview
   }
 }
 ```
+
+### 🛡️ Global Authentication Middleware (NEW)
+
+**Complete four-tier authentication system implemented:**
+
+1. **CRITICAL_API** - `/api/admin/*` routes require authentication, return 401 if unauthorized
+2. **PROTECTED_PAGE** - `/admin`, `/dashboard` routes redirect to login if unauthorized  
+3. **AUTH_PAGE** - `/auth/*` routes redirect authenticated users to admin
+4. **PUBLIC_ENHANCED** - All other routes enhanced with auth context but remain accessible
+
+**Key Features:**
+- ✅ **Server-side protection** - Cannot be bypassed by client-side code
+- ✅ **Global coverage** - All pages automatically get authentication context
+- ✅ **TypeScript integration** - Full type safety with `Astro.locals` extensions
+- ✅ **Route classification** - Automatic protection based on route patterns
+- ✅ **Seamless integration** - Works with existing OAuth system
 
 ## 🚨 Critical Solutions Implemented
 
@@ -324,6 +372,28 @@ const encodedSessionData = btoa(JSON.stringify(sessionData));
 - Authentication occurs at workspace level, not site-specific
 - No site ID passed in auth URL (`/lucid/auth`)
 - To target specific site: use `/lucid/auth?site_id=SITE_ID` or implement post-auth site selection
+
+### 5. Cookie Name Consistency (CRITICAL FIX - 2025-08-14)
+
+**Issue Discovered**: Cookie name inconsistency causing intermittent authentication failures:
+- **Problem**: Code was writing `webflow_session` but reading `webflow_session_data`
+- **Root Cause**: Different cookie names used in callback.ts vs auth-simple.ts
+- **Symptom**: Pages showing "not authenticated" while API calls showed "authenticated"
+
+**✅ SOLUTION**: Standardized all cookie operations to use `webflow_session_data`:
+
+```typescript
+// ✅ CORRECT - Consistent cookie name everywhere
+const cookieValue = `webflow_session_data=${encodedSessionData}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${24 * 60 * 60}`;
+
+// Reading cookies
+const sessionCookie = cookies.webflow_session_data;
+```
+
+**Files Updated**:
+- `src/lib/auth-simple.ts` - Fixed cookie writing
+- `src/pages/api/debug-*.ts` - Fixed debug endpoints
+- `src/pages/index.astro` - Fixed cookie detection
 
 ## 🚨 Troubleshooting
 

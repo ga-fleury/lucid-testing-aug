@@ -30,6 +30,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
         
         // Check for different possible session cookie names
         const sessionCookiePatterns = [
+            'webflow_session_data',
             'webflow_session',
             'session',
             'lucid_session',
