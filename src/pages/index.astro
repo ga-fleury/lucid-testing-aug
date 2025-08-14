@@ -175,7 +175,7 @@ console.info('Request cookies for debugging:', {
     </div>
 
     <script>
-        let isAuthenticated = false;
+        let clientIsAuthenticated = false;
 
         // Check authentication status on page load
         window.addEventListener('DOMContentLoaded', () => {
@@ -264,7 +264,7 @@ console.info('Request cookies for debugging:', {
                         JSON.stringify(data, null, 2) + '</pre>';
                         
                     if (data.session.authenticated) {
-                        isAuthenticated = true;
+                        clientIsAuthenticated = true;
                         showFrameworkActions();
                     }
                 } else {
@@ -290,7 +290,7 @@ console.info('Request cookies for debugging:', {
         }
 
         window.installFramework = async function() {
-            if (!isAuthenticated) {
+            if (!clientIsAuthenticated) {
                 showError('Please authenticate first');
                 return;
             }
@@ -326,7 +326,7 @@ console.info('Request cookies for debugging:', {
         }
 
         window.uninstallFramework = async function() {
-            if (!isAuthenticated) {
+            if (!clientIsAuthenticated) {
                 showError('Please authenticate first');
                 return;
             }
