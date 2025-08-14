@@ -19,14 +19,15 @@ export const GET: APIRoute = async ({ request, locals }) => {
         const env = locals?.runtime?.env;
         console.log('Environment available:', !!env);
         
-        // Check authentication status using new cookie-based approach
-        const authSession = validateSessionFromRequest(request);
-        console.log('Session validation result:', !!authSession);
+        // Use authentication data provided by middleware
+        const { user: authSession, isAuthenticated } = locals;
+        console.log('Middleware auth data:', { isAuthenticated, userEmail: authSession?.userEmail });
         
-        if (authSession) {
-            console.log('Authenticated user:', authSession.userEmail);
-        } else {
-            console.log('No valid session found');
+        // Fallback: Check session directly if middleware didn't provide data
+        if (authSession === undefined) {
+            console.warn('No middleware auth data found, falling back to direct session check');
+            const fallbackSession = validateSessionFromRequest(request);
+            console.log('Fallback session validation result:', !!fallbackSession);
         }
         
         // Check environment variables
@@ -45,10 +46,15 @@ export const GET: APIRoute = async ({ request, locals }) => {
                 timestamp: new Date().toISOString()
             },
             session: {
-                authenticated: !!authSession,
+                authenticated: isAuthenticated,
                 userEmail: authSession?.userEmail || null,
                 sessionId: authSession?.sessionId || null,
                 siteId: authSession?.siteId || null
+            },
+            middleware: {
+                active: authSession !== undefined,
+                providedAuthData: !!locals.user,
+                isAuthenticatedFlag: locals.isAuthenticated
             },
             storage: storageHealth,
             environment: {

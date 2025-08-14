@@ -1,5 +1,15 @@
 ---
 // Lucid Framework - Admin Interface
+// Enhanced with middleware authentication context
+
+// Get authentication data from middleware
+const { user, isAuthenticated } = Astro.locals;
+
+console.info('Admin interface accessed:', { 
+    authenticated: isAuthenticated,
+    userEmail: user?.userEmail || 'anonymous',
+    middlewareActive: user !== undefined
+});
 ---
 
 <!DOCTYPE html>
@@ -82,6 +92,19 @@
             Loading framework status...
         </div>
 
+        {user && (
+            <div class="status success" style="margin-top: 1rem;">
+                🛡️ <strong>Middleware Active:</strong> Authenticated as {user.userEmail}
+                {user.siteId && ` • Site: ${user.siteId}`}
+            </div>
+        )}
+
+        {!isAuthenticated && (
+            <div class="status" style="background: #fef3c7; color: #92400e; margin-top: 1rem;">
+                🔓 <strong>Public Access:</strong> Not authenticated (middleware enhancement active)
+            </div>
+        )}
+
         <div id="actions" style="display: none;">
             <button class="btn btn-primary" onclick="authenticate()">
                 🔐 Authenticate with Webflow
@@ -93,6 +116,10 @@
             
             <button class="btn btn-primary" onclick="debugSession()" style="background: #f59e0b;">
                 🐛 Debug Session
+            </button>
+            
+            <button class="btn btn-primary" onclick="testMiddleware()" style="background: #8b5cf6;">
+                🛡️ Test Middleware
             </button>
         </div>
 
@@ -318,6 +345,31 @@
             } catch (error) {
                 console.error('Debug session error:', error);
                 showError('Debug session error: ' + error.message);
+            }
+        }
+
+        window.testMiddleware = async function() {
+            try {
+                console.log('Testing middleware protection...');
+                const response = await fetch('/lucid/api/admin/middleware-test');
+                const data = await response.json();
+                
+                console.log('Middleware test results:', data);
+                
+                const resultsEl = document.getElementById('results');
+                resultsEl.innerHTML = '<h3>Middleware Test Results</h3><pre>' + 
+                    JSON.stringify(data, null, 2) + '</pre>';
+                
+                if (response.ok && data.middlewareTest?.passed) {
+                    showSuccess('Middleware protection working correctly!');
+                } else if (response.status === 401) {
+                    showError('Middleware correctly blocked unauthenticated access');
+                } else {
+                    showError('Middleware test failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Middleware test error:', error);
+                showError('Middleware test error: ' + error.message);
             }
         }
     </script>

@@ -1,0 +1,202 @@
+---
+/**
+ * Middleware Test Page
+ * This is a public page that shows middleware enhancement in action
+ */
+
+const { user, isAuthenticated } = Astro.locals;
+
+console.info('Middleware test page accessed:', { 
+    authenticated: isAuthenticated,
+    userEmail: user?.userEmail || 'anonymous',
+    middlewareActive: user !== undefined
+});
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Middleware Test - Lucid Framework</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .test-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        .success { border-color: #10b981; background: #f0fdf4; }
+        .info { border-color: #3b82f6; background: #eff6ff; }
+        .warning { border-color: #f59e0b; background: #fffbeb; }
+        
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+            display: inline-block;
+        }
+        .btn:hover { background: #2563eb; }
+        .btn-danger { background: #ef4444; }
+        .btn-danger:hover { background: #dc2626; }
+        
+        pre {
+            background: #f3f4f6;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ Middleware Test Page</h1>
+        <p>This page demonstrates the middleware authentication system in action.</p>
+        
+        <div class="test-card success">
+            <h3>✅ Middleware Status</h3>
+            <p><strong>Active:</strong> {user !== undefined ? 'Yes' : 'No'}</p>
+            <p><strong>Route Type:</strong> Public Enhanced (accessible to all, enhanced with auth data)</p>
+        </div>
+        
+        {isAuthenticated ? (
+            <div class="test-card success">
+                <h3>🔐 Authenticated User</h3>
+                <p><strong>Email:</strong> {user.userEmail}</p>
+                <p><strong>Session ID:</strong> {user.sessionId}</p>
+                <p><strong>Site ID:</strong> {user.siteId || 'Not specified'}</p>
+                
+                <h4>Available Actions:</h4>
+                <a href="/lucid/admin" class="btn">🏠 Go to Admin Dashboard</a>
+                <button onclick="testProtectedAPI()" class="btn">🔒 Test Protected API</button>
+                <a href="/lucid/auth/logout" class="btn btn-danger">🚪 Logout</a>
+            </div>
+        ) : (
+            <div class="test-card warning">
+                <h3>🔓 Anonymous User</h3>
+                <p>You are not authenticated. The middleware has enhanced this page with auth context, but you don't have an active session.</p>
+                
+                <h4>Available Actions:</h4>
+                <a href="/lucid/auth" class="btn">🔐 Login with Webflow</a>
+                <button onclick="testProtectedAPI()" class="btn">🚫 Try Protected API (will fail)</button>
+            </div>
+        )}
+        
+        <div class="test-card info">
+            <h3>🧪 Middleware Tests</h3>
+            <p>Click these buttons to test different aspects of the middleware system:</p>
+            
+            <button onclick="testPublicAPI()" class="btn">📡 Test Public API</button>
+            <button onclick="testProtectedAPI()" class="btn">🔒 Test Protected API</button>
+            <button onclick="testAdminPage()" class="btn">🏛️ Test Admin Page</button>
+            <button onclick="testAuthPage()" class="btn">🔑 Test Auth Page</button>
+        </div>
+        
+        <div id="results">
+            <!-- Test results will appear here -->
+        </div>
+    </div>
+
+    <script>
+        async function testPublicAPI() {
+            showLoading('Testing public API...');
+            try {
+                const response = await fetch('/lucid/api/admin/status');
+                const data = await response.json();
+                showResults('Public API Test', response.status, data);
+            } catch (error) {
+                showError('Public API test failed: ' + error.message);
+            }
+        }
+
+        async function testProtectedAPI() {
+            showLoading('Testing protected API...');
+            try {
+                const response = await fetch('/lucid/api/admin/middleware-test');
+                const data = await response.json();
+                showResults('Protected API Test', response.status, data);
+                
+                if (response.status === 401) {
+                    showMessage('✅ Middleware correctly blocked unauthenticated access!', 'success');
+                } else if (response.ok) {
+                    showMessage('✅ Middleware correctly allowed authenticated access!', 'success');
+                } else {
+                    showMessage('❌ Unexpected response from protected API', 'error');
+                }
+            } catch (error) {
+                showError('Protected API test failed: ' + error.message);
+            }
+        }
+
+        async function testAdminPage() {
+            showLoading('Testing admin page redirect...');
+            window.location.href = '/lucid/admin';
+        }
+
+        async function testAuthPage() {
+            showLoading('Testing auth page redirect...');
+            window.location.href = '/lucid/auth';
+        }
+
+        function showLoading(message) {
+            document.getElementById('results').innerHTML = 
+                '<div class="test-card info"><h3>⏳ Testing...</h3><p>' + message + '</p></div>';
+        }
+
+        function showResults(testName, status, data) {
+            const statusClass = status >= 200 && status < 300 ? 'success' : 
+                               status >= 400 && status < 500 ? 'warning' : 'error';
+            
+            document.getElementById('results').innerHTML = 
+                '<div class="test-card ' + statusClass + '">' +
+                '<h3>' + testName + ' Results</h3>' +
+                '<p><strong>Status:</strong> ' + status + '</p>' +
+                '<pre>' + JSON.stringify(data, null, 2) + '</pre>' +
+                '</div>';
+        }
+
+        function showMessage(message, type = 'info') {
+            const existing = document.getElementById('results').innerHTML;
+            document.getElementById('results').innerHTML = 
+                existing + '<div class="test-card ' + type + '"><p>' + message + '</p></div>';
+        }
+
+        function showError(message) {
+            showMessage('❌ ' + message, 'error');
+        }
+
+        // Auto-run some tests on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('Middleware test page loaded');
+            console.log('User authenticated:', {user !== undefined ? 'true' : 'false'});
+            console.log('Middleware data:', { 
+                hasUser: {!!user},
+                isAuthenticated: {isAuthenticated},
+                userEmail: '{user?.userEmail || 'none'}'
+            });
+        });
+    </script>
+</body>
+</html>
