@@ -52,6 +52,7 @@ WEBFLOW_CLIENT_SECRET=your_webflow_app_client_secret
    - `pages:write`
    - `custom_code:read`
    - `custom_code:write`
+   - `authorized_user:read` *(Required for user authentication)*
 
 ### 3. Deploy to Webflow Cloud
 
@@ -252,343 +253,109 @@ npm run preview
 3. Implement `init()` and `destroy()` methods
 4. Use `data-module="modulename"` in HTML
 
-## 🚨 Troubleshooting
+## ✅ Status: FULLY FUNCTIONAL (2025-08-13)
 
-### Critical: Webflow Cloud API Route Compatibility
+**🎉 Authentication Working**: The OAuth flow is now fully functional with complete session management.
 
-**IMPORTANT**: Webflow Cloud's Astro implementation does NOT support the standard `{ locals }` destructuring pattern in API routes.
-
-❌ **This DOES NOT work in Webflow Cloud:**
-```typescript
-export async function GET(request: Request, { locals }: { locals: any }) {
-    const env = locals.runtime.env;  // This fails!
-}
-```
-
-✅ **This WORKS in Webflow Cloud:**
-```typescript
-export async function GET(request: Request) {
-    const env = process.env;  // Use process.env instead
-}
-```
-
-**Environment Variable Access:**
-- Use `process.env.VARIABLE_NAME` instead of `locals.runtime.env.VARIABLE_NAME`
-- Always check `typeof process !== 'undefined'` for safety
-- The `{ locals }` pattern causes 500 errors in Webflow Cloud
-
-**CRITICAL: Environment Variables Not Accessible in Runtime**
-- ⚠️ **Issue**: Environment variables are NOT accessible via `process.env` in Webflow Cloud runtime
-- 🔍 **Testing shows**: `process.env` exists but is empty (no keys available)
-- 📝 **webflow.json**: Variables are correctly configured with `${VARIABLE_NAME}` pattern
-- 🚨 **Impact**: Authentication cannot work without access to `WEBFLOW_CLIENT_ID` and `WEBFLOW_CLIENT_SECRET`
-
-**Debugging Results:**
-```javascript
-// All of these return undefined/empty in Webflow Cloud:
-process.env.WEBFLOW_CLIENT_ID          // undefined
-globalThis.WEBFLOW_CLIENT_ID           // undefined  
-WEBFLOW_CLIENT_ID                      // undefined
-Object.keys(process.env)               // [] (empty array)
-```
-
-**Research Findings - Correct Environment Variable Access Pattern:**
-
-Based on Webflow Cloud and Cloudflare Workers documentation:
-
-1. **Webflow Cloud Framework Customization**: States that for Astro, environment variables should be accessed via:
-   ```typescript
-   // In API routes
-   export const GET: APIRoute = async ({ locals }) => {
-     const siteId = locals.runtime.env.WEBFLOW_SITE_ID;
-   };
-   ```
-
-2. **Cloudflare Workers Pattern**: Environment variables are accessed via `env` parameter:
-   ```typescript
-   export default {
-     async fetch(request, env, ctx) {
-       const myVariable = env.MY_VARIABLE;
-     }
-   }
-   ```
-
-3. **Issue**: The `{ locals }` destructuring pattern fails in Webflow Cloud, but the `env` parameter pattern might work.
-
-**Test Results:**
-
-✅ **Cloudflare Workers `env` Parameter Test**: `/lucid/api/test-workers-env`
+**Latest Test Results:**
 ```json
 {
-  "parameters": {
-    "hasEnv": false,
-    "hasCtx": false,
-    "envType": "undefined",
-    "ctxType": "undefined"
-  }
-}
-```
-❌ **Result**: Cloudflare Workers pattern also DOES NOT work in Webflow Cloud
-
-**Final Hypothesis - Build-Time Variables:**
-Based on Astro documentation, environment variables might be injected at build time via `import.meta.env`:
-
-```typescript
-// Astro standard pattern
-const clientId = import.meta.env.WEBFLOW_CLIENT_ID;
-// OR with PUBLIC_ prefix for client-side access
-const clientId = import.meta.env.PUBLIC_WEBFLOW_CLIENT_ID;
-```
-
-🎉 **BREAKTHROUGH - Working Environment Variable Pattern Found!**
-
-✅ **`import.meta.env` Test Results**: `/lucid/api/test-import-meta`
-```json
-{
-  "importMeta": {
-    "hasImportMeta": true,
-    "hasEnv": true,
-    "envType": "object"
+  "session": {
+    "authenticated": true,
+    "userEmail": "gabrielfleury95@gmail.com",
+    "sessionId": "26e6bbb70af78b00d04557d12161262379ee02a313de647b48078c340348c88e",
+    "siteId": null
   },
-  "environmentVariables": {
-    "availableKeys": [
-      "ASSETS_PREFIX", "BASE_URL", "DEV", "MODE", "PROD", "SITE", "SSR",
-      "WEBFLOW_CLIENT_ID", "WEBFLOW_CLIENT_SECRET"
-    ]
-  }
-}
-```
-
-✅ **SOLUTION FOUND**: Environment variables ARE available via `import.meta.env` at build time!
-
-**Working Pattern**:
-```typescript
-// ✅ CORRECT - Works in Webflow Cloud
-const clientId = import.meta.env.WEBFLOW_CLIENT_ID;
-const clientSecret = import.meta.env.WEBFLOW_CLIENT_SECRET;
-```
-
-**Implementation Updates**:
-- ✅ Updated `src/pages/api/admin/status.ts` to use `import.meta.env`
-- ✅ Updated `src/lib/auth-simple.ts` with `import.meta.env` fallback
-- ✅ Verified environment variable access pattern works
-
-**Final Diagnostic Results**:
-
-✅ **Environment Variable Detection**: `/lucid/api/test-env-values`
-```json
-{
-  "environmentVariables": {
-    "webflowClientId": {
-      "type": "undefined",           // ❌ Value is undefined
-      "truthyCheck": false,
-      "isPlaceholder": false
-    },
-    "baseUrl": {
-      "value": "/lucid",             // ✅ Working variable for comparison
-      "type": "string"
-    }
-  }
-}
-```
-
-**Root Cause Identified**:
-- ✅ `import.meta.env` access pattern works correctly
-- ✅ Variables appear in `envKeys`: `["WEBFLOW_CLIENT_ID", "WEBFLOW_CLIENT_SECRET"]`
-- ❌ **Actual values are `undefined`** - not set in Webflow Cloud project settings
-
-🔍 **NEW DISCOVERY - Secret Variables Behave Differently**:
-
-**After setting environment variables in Webflow Cloud**:
-```json
-{
   "environment": {
-    "envKeys": [
-      "ASSETS_PREFIX", "BASE_URL", "DEV", "MODE", "PROD", "SITE", "SSR",
-      "WEBFLOW_CLIENT_ID"          // ✅ Visible (regular variable)
-      // ❌ WEBFLOW_CLIENT_SECRET missing (marked as "secret variable")
-    ]
+    "hasClientId": true,
+    "hasClientSecret": true,
+    "deployedOn": "webflow-cloud"
   }
 }
 ```
 
-**Key Finding**: When `WEBFLOW_CLIENT_SECRET` is marked as a "secret variable" in Webflow Cloud:
-- ❌ It **disappears** from the `envKeys` array
-- ❌ It's **not accessible** via `import.meta.env`
-- ✅ `WEBFLOW_CLIENT_ID` remains visible (not marked as secret)
+## 🚨 Critical Solutions Implemented
 
-**Hypothesis**: Secret variables in Webflow Cloud might require a different access pattern than regular environment variables.
+### 1. Webflow Cloud API Route Pattern
 
-**Secret Variables Test Results**: `/lucid/api/test-secrets`
-```json
-{
-  "accessPatterns": {
-    "importMetaEnv": {
-      "clientId": {
-        "available": true,
-        "type": "undefined"        // ❌ Still no value
-      },
-      "clientSecret": {
-        "available": false,        // ❌ Secret variable not accessible
-        "type": "undefined"
-      }
-    },
-    "envParameter": {
-      "note": "env parameter not available"  // ❌ No env parameter
-    }
-  },
-  "summary": {
-    "canAuthenticate": false     // ❌ No working access pattern
-  }
-}
+**✅ WORKING SOLUTION**: Use `{ locals }` destructuring with `locals.runtime.env`:
+
+```typescript
+import type { APIRoute } from 'astro';
+
+export const config = { runtime: "edge" };
+
+export const GET: APIRoute = async ({ locals }) => {
+    const env = locals.runtime.env;
+    const clientId = env.WEBFLOW_CLIENT_ID;
+    const clientSecret = env.WEBFLOW_CLIENT_SECRET;
+    // Environment variables now accessible!
+};
 ```
 
-**Findings**:
-- ❌ **Secret variables**: Completely inaccessible via any tested method
-- ❌ **Regular variables**: Detected but values still `undefined`
-- ❌ **No runtime access**: `env` parameter, `process.env`, global scope all fail
+### 2. Session Storage Solution
 
-🔍 **Final Diagnostic Results**: `/lucid/api/test-final`
-```json
-{
-  "environmentVariables": {
-    "webflowClientId": {
-      "inKeys": true,           // ✅ Variable is configured
-      "type": "undefined",      // ❌ But value is undefined
-      "hasValue": false
-    },
-    "webflowClientSecret": {
-      "inKeys": false,          // ❌ Still marked as secret
-      "type": "undefined"
-    },
-    "authLibraryTest": {
-      "success": false,
-      "error": "WEBFLOW_CLIENT_ID not configured"  // ❌ Auth fails
-    }
-  }
-}
+**Problem Solved**: Cloudflare Workers in-memory storage doesn't persist between worker instances.
+
+**✅ SOLUTION**: Cookie-based session storage:
+
+```typescript
+// Store session data directly in cookie (Base64 encoded)
+const sessionData = {
+    sessionId: session.sessionId,
+    userEmail: session.userEmail,
+    siteId: session.siteId,
+    expiresAt: Date.now() + (24 * 60 * 60 * 1000)
+};
+const encodedSessionData = btoa(JSON.stringify(sessionData));
+// Cookie: webflow_session_data=eyJzZXNzaW9uSWQi...
 ```
 
-🎯 **ACTUAL ROOT CAUSE DISCOVERED**: 
+### 3. OAuth API Corrections
 
-**Webflow Cloud Documentation States:**
-> "Environment variables are available at runtime only. Environment variables are not available at build time—only during runtime."
+**Fixed Issues**:
+- ✅ **Correct API method**: `webflow.token.authorizedBy()` instead of `webflow.user.get()`
+- ✅ **Required scope**: Added `authorized_user:read` scope
+- ✅ **CORS fix**: Direct browser redirects instead of AJAX for OAuth flow
 
-**Our Problem**: We've been trying to access environment variables at **build time** via `import.meta.env`, but Webflow Cloud only provides them at **runtime**!
+### 4. Session ID Behavior
 
-**Why `import.meta.env` Shows `undefined`**:
-- `import.meta.env` is build-time access
-- Webflow Cloud doesn't inject variables until runtime
-- Variables exist in configuration but have no values during build
+**Why `siteId` is `null`**: This is **correct behavior** for workspace-level OAuth:
+- Authentication occurs at workspace level, not site-specific
+- No site ID passed in auth URL (`/lucid/auth`)
+- To target specific site: use `/lucid/auth?site_id=SITE_ID` or implement post-auth site selection
 
-## 🔧 **SOLUTION: Runtime Environment Variable Access**
-
-**The Fix**: Update API routes to access environment variables at **runtime** instead of build time.
-
-**New Test**: `/lucid/api/test-runtime` 
-- Tests different runtime access patterns
-- Based on Webflow Cloud documentation: `context.locals.runtime.env`
-- Checks if environment variables are available at runtime
-
-### Next Steps:
-1. ⏳ **Test runtime access**: Visit `/lucid/api/test-runtime`
-2. ✅ **Identify working pattern**: Find correct runtime access method
-3. 🔧 **Update API routes**: Switch from `import.meta.env` to runtime access
-4. 🎯 **Enable authentication**: OAuth should work with runtime variables
-
-**Runtime Test Results**: `/lucid/api/test-runtime`
-```json
-{
-  "parameterTests": {
-    "hasContext": false,          // ❌ No context parameter in Webflow Cloud
-    "contextType": "undefined"
-  },
-  "runtimeAccess": {
-    "method1": { "hasClientId": false },    // ❌ context.locals.runtime.env
-    "method2": { "hasClientId": false },    // ❌ context.env  
-    "method3": { "hasClientId": false }     // ❌ direct context
-  }
-}
-```
-
-**Key Discovery**: Webflow Cloud's Astro implementation **doesn't provide the standard `context` parameter** to API routes.
-
-**New Hypothesis**: Environment variables might be available via:
-- Runtime `process.env` (different from build-time)
-- Global scope injection
-- Alternative runtime patterns
-
-**Runtime Global Test Results**: `/lucid/api/test-runtime-global`
-```json
-{
-  "globalTests": {
-    "processEnv": {
-      "keys": [],                    // ❌ Empty at runtime too
-      "hasClientId": false,
-      "hasClientSecret": false
-    },
-    "directGlobals": {
-      "hasClientId": false,          // ❌ No global injection
-      "hasClientSecret": false
-    },
-    "moduleScope": {
-      "clientIdDefined": false,      // ❌ No direct variable access
-      "clientSecretDefined": false
-    }
-  },
-  "canAuthenticate": false           // ❌ No working access method
-}
-```
-
-## ⚠️ **CRITICAL LIMITATION IDENTIFIED**
-
-**Webflow Cloud Astro Implementation**: Environment variables are **not accessible through any tested method** despite documentation claiming runtime availability.
-
-### Tested and Failed:
-- ❌ Build-time: `import.meta.env` (variables detected, values `undefined`)
-- ❌ Runtime: `process.env` (empty array)
-- ❌ Runtime: Context parameters (not provided)
-- ❌ Runtime: Global scope (not injected)
-- ❌ Runtime: Direct variables (not available)
-
-### Possible Solutions:
-1. **Contact Webflow Support** - This appears to be a platform limitation
-2. **Alternative Authentication** - Use client-side OAuth that doesn't require server-side secrets
-3. **External Configuration** - Store credentials in external service accessible at runtime
-4. **Framework Change** - Consider different framework if Webflow Cloud supports environment variables better in other frameworks
+## 🚨 Troubleshooting
 
 ### Common Issues
 
-**500 Errors on API Routes**
-- Check if using `{ locals }` parameter - remove it
-- Use `process.env` for environment variables
-- Add `export const config = { runtime: "edge" };` to all API routes
+**API Route 500 Errors**
+```typescript
+// ❌ WRONG - Causes 500 errors
+export async function GET(request: Request, { locals }: { locals: any }) {
+    // The above signature fails in Webflow Cloud
+}
 
-**Authentication Failed**
-- Verify `WEBFLOW_CLIENT_ID` and `WEBFLOW_CLIENT_SECRET`
-- Check redirect URI matches Webflow app settings
-- Ensure user has access to the Webflow site
-
-**Module Not Loading**
-- Check browser console for import errors
-- Verify module file exists in `src/modules/`
-- Ensure module exports default class
-
-**Framework Not Installing**
-- Verify user is authenticated
-- Check that user has site permissions
-- Review API error messages in browser console
-
-### Debug Mode
-
-Enable debug mode in framework config:
-
-```javascript
-{
-    "debug": true,
-    "version": "1.0.0"
+// ✅ CORRECT - Works in Webflow Cloud
+export const GET: APIRoute = async ({ locals }) => {
+    const env = locals.runtime.env;
 }
 ```
+
+**Authentication Issues**
+- Ensure all required scopes are configured in Webflow app
+- Verify redirect URI matches: `https://your-site.webflow.io/lucid/auth/callback`
+- Check that environment variables are set as **regular variables** (not secrets)
+
+**Module Loading Issues**
+- Check browser console for import errors
+- Verify module file exists in `src/modules/`
+- Ensure module exports default class with constructor
+
+**Framework Installation**
+- User must be authenticated first
+- User must have site permissions
+- Check API error messages in browser Network tab
 
 ## 📚 Resources
 
