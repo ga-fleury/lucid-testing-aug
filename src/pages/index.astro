@@ -5,13 +5,35 @@
 // Get authentication data from middleware
 const { user, isAuthenticated } = Astro.locals;
 
-console.info('Admin interface accessed:', { 
+// Enhanced server-side logging for page render debugging
+const pageRenderTime = new Date().toISOString();
+const pageRenderMs = Date.now();
+
+console.info('🏠 INDEX PAGE RENDER DEBUG:', { 
+    timestamp: pageRenderTime,
+    timestampMs: pageRenderMs,
     authenticated: isAuthenticated,
     userEmail: user?.userEmail || 'anonymous',
     middlewareActive: user !== undefined,
     hasUser: !!user,
     userType: typeof user,
-    localsKeys: Object.keys(Astro.locals)
+    userIsNull: user === null,
+    userIsUndefined: user === undefined,
+    localsKeys: Object.keys(Astro.locals),
+    localsUser: !!Astro.locals.user,
+    localsAuth: Astro.locals.isAuthenticated
+});
+
+// Log the actual values that will be displayed
+console.info('🎨 PAGE DISPLAY VALUES:', {
+    willShowAuthenticatedMessage: !!user,
+    willShowNotAuthenticatedMessage: !isAuthenticated,
+    displayLogic: {
+        userExists: !!user,
+        isAuthenticated: isAuthenticated,
+        shouldShowGreenBox: !!user,
+        shouldShowYellowBox: !isAuthenticated
+    }
 });
 
 // Debug: Check if middleware provided the expected data
@@ -140,6 +162,10 @@ console.info('Request cookies for debugging:', {
             
             <button class="btn btn-primary" onclick="debugConsistency()" style="background: #ec4899;">
                 🔍 Debug Consistency
+            </button>
+            
+            <button class="btn btn-primary" onclick="debugPageVsApi()" style="background: #84cc16;">
+                📊 Page vs API Debug
             </button>
         </div>
 
@@ -437,6 +463,43 @@ console.info('Request cookies for debugging:', {
             } catch (error) {
                 console.error('❌ Consistency debug error:', error);
                 showError('Consistency debug error: ' + error.message);
+            }
+        }
+
+        window.debugPageVsApi = async function() {
+            try {
+                console.log('📊 Running page vs API debug...');
+                const response = await fetch('/lucid/api/debug-page-vs-api');
+                const data = await response.json();
+                
+                console.log('Page vs API debug results:', data);
+                
+                const resultsEl = document.getElementById('results');
+                
+                // Analyze cookie situation
+                let cookieAnalysis = '';
+                if (data.cookies.foundSessionCookies && Object.keys(data.cookies.foundSessionCookies).length > 0) {
+                    cookieAnalysis = `✅ Found session cookies: ${Object.keys(data.cookies.foundSessionCookies).join(', ')}`;
+                } else {
+                    cookieAnalysis = `⚠️ No session cookies found! Total cookies: ${data.cookies.totalCookieCount}`;
+                }
+                
+                resultsEl.innerHTML = `
+                    <h3>📊 Page vs API Authentication Debug</h3>
+                    <div class="status info" style="margin: 1rem 0;">
+                        Current API Call: ${data.currentApiCall.middleware.isAuthenticated ? '✅ Authenticated' : '❌ Not Authenticated'}
+                    </div>
+                    <div class="status info" style="margin: 1rem 0;">
+                        ${cookieAnalysis}
+                    </div>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+                showSuccess('Page vs API debug completed - check results above');
+                
+            } catch (error) {
+                console.error('❌ Page vs API debug error:', error);
+                showError('Page vs API debug error: ' + error.message);
             }
         }
     </script>
