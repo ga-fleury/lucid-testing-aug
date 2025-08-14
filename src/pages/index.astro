@@ -48,6 +48,11 @@ console.info('Request cookies for debugging:', {
     cookieLength: cookieHeader?.length || 0,
     hasSessionCookie: cookieHeader?.includes('webflow_session_data') || false
 });
+
+// Set cache control headers to prevent caching of authenticated state
+Astro.response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+Astro.response.headers.set('Pragma', 'no-cache');
+Astro.response.headers.set('Expires', '0');
 ---
 
 <!DOCTYPE html>
@@ -183,9 +188,45 @@ console.info('Request cookies for debugging:', {
                 authenticate: typeof authenticate,
                 checkStatus: typeof checkStatus
             });
+            
+            // Immediately check if there's a mismatch between server and client state
+            checkAuthenticationState();
             checkStatus();
             document.getElementById('actions').style.display = 'block';
         });
+
+        // Quick authentication state verification
+        window.checkAuthenticationState = async function() {
+            try {
+                // Quick status check to verify current auth state
+                const response = await fetch('/lucid/api/admin/status');
+                if (response.ok) {
+                    const data = await response.json();
+                    const serverIsAuthenticated = data.session.authenticated;
+                    
+                    // Get current page display state
+                    const notAuthBanner = document.querySelector('.status[style*="background: #fef3c7"]');
+                    const authBanner = document.querySelector('.status.success');
+                    
+                    // If server says authenticated but page shows not authenticated banner
+                    if (serverIsAuthenticated && notAuthBanner && notAuthBanner.style.display !== 'none') {
+                        console.warn('🔄 Authentication state mismatch detected - server authenticated but page shows not authenticated');
+                        console.log('Refreshing page to fix caching issue...');
+                        // Force refresh to get correct server state
+                        window.location.reload(true);
+                    }
+                    
+                    // If server says not authenticated but page shows authenticated banner
+                    if (!serverIsAuthenticated && authBanner && authBanner.style.display !== 'none') {
+                        console.warn('🔄 Authentication state mismatch detected - server not authenticated but page shows authenticated');
+                        console.log('Refreshing page to fix caching issue...');
+                        window.location.reload(true);
+                    }
+                }
+            } catch (error) {
+                console.log('Quick auth check failed:', error.message);
+            }
+        };
 
         window.authenticate = function() {
             console.log('Authentication function called - redirecting to auth endpoint');
