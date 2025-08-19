@@ -77,7 +77,16 @@ export function generateAuthUrl(siteId?: string, env?: any): { authUrl: string; 
         'pages:write',
         'custom_code:read',
         'custom_code:write',
-        'authorized_user:read'
+        'authorized_user:read',
+        'cms:read',
+        'cms:write',
+        'site_config:read',
+        'site_config:write',
+        'components:read',
+        'components:write',
+        'assets:read',
+        'assets:write',
+        'site_activity:read'
     ];
 
     const authUrl = WebflowClient.authorizeURL({
